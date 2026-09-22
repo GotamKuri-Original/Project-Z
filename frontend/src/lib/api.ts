@@ -34,6 +34,8 @@ export async function predict(complaint: {
   amount: number;
   victim_city: string;
   victim_state: string;
+  last_mule_city: string;
+  mule_chain_length: number;
   hour_of_day: number;
   day_of_week: number;
   reporting_delay_mins: number;

@@ -2,6 +2,23 @@
 
 import { useState } from "react";
 import { predict } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+
+export interface PredictionResponse {
+  prediction: {
+    risk_level: string;
+    overall_confidence: number;
+    estimated_withdrawal_window: string;
+    zones: Array<{
+      city: string;
+      state: string;
+      confidence: number;
+      risk_level: string;
+      num_high_risk_atms: number;
+    }>;
+  };
+  recommended_action: string;
+}
 
 const FRAUD_TYPES = [
   { value: "UPI_FRAUD", label: "UPI Fraud", icon: "📱" },
@@ -34,7 +51,7 @@ export default function PredictPage() {
     last_mule_city: "Mathura", mule_chain_length: 3,
     hour_of_day: 20, day_of_week: 3, reporting_delay_mins: 25,
   });
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<PredictionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
@@ -68,7 +85,13 @@ export default function PredictPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 24, alignItems: "start" }}>
         {/* Input Form */}
-        <div className="glass-card" style={{ padding: 28 }}>
+        <motion.div 
+          initial={{ opacity: 0, x: -30 }} 
+          animate={{ opacity: 1, x: 0 }} 
+          transition={{ type: "spring", stiffness: 100 }}
+          className="glass-card" 
+          style={{ padding: 28 }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
             <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(56,189,248,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
               📝
@@ -151,13 +174,21 @@ export default function PredictPage() {
               {loading ? "⏳ ANALYZING..." : "🔍 ANALYZE THREAT"}
             </button>
           </form>
-        </div>
+        </motion.div>
 
         {/* Results */}
-        <div>
-          {result && showResult ? (
-            <div className="slide-up" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Risk Level Hero Card */}
+        <div style={{ position: "relative" }}>
+          <AnimatePresence mode="wait">
+            {result && showResult ? (
+              <motion.div 
+                key="results"
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 120, damping: 14 }}
+                style={{ display: "flex", flexDirection: "column", gap: 16 }}
+              >
+                {/* Risk Level Hero Card */}
               {(() => {
                 const risk = riskConfig[result.prediction.risk_level] || riskConfig.MEDIUM;
                 return (
@@ -258,9 +289,16 @@ export default function PredictPage() {
                   })}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="glass-card" style={{ padding: "80px 40px", textAlign: "center" }}>
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="glass-card" 
+              style={{ padding: "80px 40px", textAlign: "center" }}
+            >
               <div style={{ fontSize: 64, marginBottom: 16 }}>🎯</div>
               <p style={{ fontSize: 20, fontWeight: 700, color: "#e2e8f0" }}>Awaiting Threat Data</p>
               <p style={{ fontSize: 14, color: "#475569", marginTop: 8 }}>
@@ -269,8 +307,9 @@ export default function PredictPage() {
               <p style={{ fontSize: 12, color: "#334155", marginTop: 16 }}>
                 AI will predict the most likely ATM zones where criminals will withdraw stolen funds
               </p>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
