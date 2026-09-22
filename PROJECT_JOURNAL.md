@@ -33,61 +33,99 @@ Understanding this flow is the foundation of everything we built:
 ```
 Step 1: 🎣 SCAM HAPPENS
    → UPI fraud, OTP phishing, KYC impersonation, investment scam, sextortion
-   → Victim unknowingly transfers money to a criminal-controlled bank account
+   → Victim unknowingly transfers money to Account A (first mule account)
 
-Step 2: 💰 MONEY ENTERS MULE NETWORK
-   → Criminals use "mule accounts" — bank accounts opened with fake/rented IDs
-   → Money is layered through 2-4 mule accounts across different states
-   → This makes it harder to trace
+Step 2: 💰 MONEY MOVES THROUGH MULE CHAIN
+   → The scammer does NOT withdraw from Account A directly
+   → Money is rapidly layered through a chain of mule accounts:
+     Account A (Delhi) → Account B (Lucknow) → Account C (Nuh) → Account D (Mathura)
+   → Each account is opened with fake/rented IDs
+   → Each transfer crosses state borders to make tracing harder
+   → This happens within minutes to hours
 
-Step 3: 📱 VICTIM REPORTS (30 min - few hours later)
+Step 3: 📱 VICTIM REPORTS
    → Calls 1930 national cybercrime helpline
    → Files complaint on NCRP portal (cybercrime.gov.in)
-   → CFCFRMS (MHA's financial fraud system) begins tracing money
+   → CFCFRMS (MHA's financial fraud system) kicks in:
+     ✓ Freezes Account A immediately
+     ✓ Traces the full chain: A → B → C → D
+     ✓ Identifies Account D as the LAST account holding the money
+     ✓ Gets the bank branch location of Account D
 
-Step 4: 🏧 CASH PULLER WITHDRAWS AT ATM (2-24 hours after scam)
-   → A low-level operative ("cash puller") withdraws physical cash
-   → Uses ATMs near highways, bus stations, and state borders for quick escape
-   → Criminals follow predictable geographic patterns (corridors)
+Step 4: 🧠 CRIMESHIELD AI PREDICTS (OUR SYSTEM)
+   → Takes the LAST account's location + complaint features as input
+   → XGBoost model predicts: "Based on Account D being in Mathura,
+     the cash puller will likely withdraw from ATMs in these 5 zones..."
+   → Returns Top 5 predicted withdrawal cities with confidence scores
 
-   ↑ THIS IS WHERE OUR AI PREDICTS — Step 4
+Step 5: 🏧 INTERCEPTION
+   → Alert dispatched to CCTNS → Nearest police station notified
+   → Patrol teams deployed to predicted ATM zones
+   → Officers intercept cash puller at ATM BEFORE withdrawal completes
+
+   ↑ WE TURN STEP 3's DATA INTO STEP 4's PREDICTION → STEP 5's ACTION
 ```
+
+### The Key Insight: Why the Mule Chain Matters
+
+**Without mule chain tracing**: A victim in Delhi reports fraud. Where is the criminal? Could be anywhere. No geographic signal.
+
+**With mule chain tracing (CFCFRMS)**: Money traveled Delhi → Lucknow → Nuh → Mathura. The LAST account is in Mathura. Now we have a geographic signal. Our AI uses this + historical patterns to predict the exact ATM zone.
+
+**The mule chain IS the intelligence pipeline.** CFCFRMS gives us the "where", our AI gives us the "where exactly + when."
 
 ### Why Prediction is Possible
 Criminals are creatures of habit:
-- **Geographic corridors**: Victims in Delhi → Cash withdrawn in Nuh/Mathura/Bharatpur
-- **Fraud type fingerprints**: Jamtara (Jharkhand) = OTP phishing hub, Mewat (Haryana) = KYC fraud hub
-- **ATM selection patterns**: Criminals prefer ATMs near highways, state borders, and bus stations for quick getaway
-- **Time patterns**: Most withdrawals happen late night (less CCTV monitoring) or early morning
-- **Amount patterns**: High-value frauds get split across multiple ATMs in the same zone
+- **Mule chain endpoints cluster geographically** — A gang in Mewat always routes money to mule accounts in Nuh/Mathura/Bharatpur
+- **Last-mile withdrawal patterns** — Cash pullers operate within 20-30 km of the last mule account's bank branch
+- **ATM selection patterns** — Criminals prefer ATMs near highways, state borders, and bus stations for quick getaway
+- **Time patterns** — Most withdrawals happen late night (less CCTV monitoring) or early morning
+- **Amount patterns** — High-value frauds get split across multiple ATMs in the same zone
+- **Fraud type fingerprints** — Jamtara (Jharkhand) = OTP phishing hub, Mewat (Haryana) = KYC fraud hub
 
 ---
 
 ## 🏗️ System Architecture
 
-### How CrimeShield AI Fits Into MHA's Existing Ecosystem
+### The Full Pipeline: Complaint → Mule Trace → AI → Interception
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     DATA SOURCES (MHA)                        │
+│                    STEP 1: DATA COLLECTION                    │
 │                                                               │
-│   [1930 Helpline] → [NCRP Portal] → [CFCFRMS Tracing]        │
-│                                         │                     │
-│        Victim files complaint    Money trail traced            │
-│                                  through mule accounts         │
-│                                         │                     │
-├─────────────────────────────────────────▼───────────────────┤
-│                  CRIMESHIELD AI ENGINE                         │
+│   [Victim] → [1930 Helpline] → [NCRP Portal]                 │
+│                                     │                         │
+│                              Complaint filed                  │
+│                                     ▼                         │
+├─────────────────────────────────────────────────────────────┤
+│                    STEP 2: MULE CHAIN TRACING (CFCFRMS)       │
+│                                                               │
+│   Account A ──→ Account B ──→ Account C ──→ Account D         │
+│   (Delhi)       (Lucknow)     (Nuh)         (Mathura)         │
+│                                                               │
+│   ✓ Freeze Account A instantly                                │
+│   ✓ Trace full money chain                                    │
+│   ✓ Identify LAST account (D) + its bank branch location      │
+│                                     │                         │
+│                          Last known location                  │
+│                                     ▼                         │
+├─────────────────────────────────────────────────────────────┤
+│                    STEP 3: CRIMESHIELD AI PREDICTION           │
+│                                                               │
+│   Input Features:                                             │
+│   • Last mule account location (from CFCFRMS)                 │
+│   • Fraud type, amount, time of day                           │
+│   • Historical ATM withdrawal patterns                        │
 │                                                               │
 │   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐     │
 │   │   XGBoost    │   │  NetworkX    │   │   Pandas     │     │
 │   │  Classifier  │   │ Graph Engine │   │  Analytics   │     │
 │   │              │   │              │   │              │     │
-│   │ Predicts     │   │ Maps criminal│   │ Aggregates   │     │
-│   │ withdrawal   │   │ networks,    │   │ trends,      │     │
-│   │ city from    │   │ finds        │   │ KPIs, fraud  │     │
-│   │ complaint    │   │ kingpins via │   │ breakdowns   │     │
-│   │ features     │   │ PageRank     │   │              │     │
+│   │ Predicts TOP │   │ Maps criminal│   │ Aggregates   │     │
+│   │ 5 withdrawal │   │ networks,    │   │ trends,      │     │
+│   │ zones from   │   │ finds        │   │ KPIs, fraud  │     │
+│   │ mule chain   │   │ kingpins via │   │ breakdowns   │     │
+│   │ endpoint     │   │ PageRank     │   │              │     │
 │   └──────┬───────┘   └──────┬───────┘   └──────┬───────┘     │
 │          │                  │                   │             │
 │          └──────────────────┼───────────────────┘             │
@@ -96,8 +134,8 @@ Criminals are creatures of habit:
 │                    │   FastAPI       │                        │
 │                    │   REST API      │                        │
 │                    └────────┬────────┘                        │
-│                             │                                 │
-├─────────────────────────────▼───────────────────────────────┤
+│                             ▼                                 │
+├─────────────────────────────────────────────────────────────┤
 │                     FRONTEND (Next.js)                        │
 │                                                               │
 │   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
@@ -105,12 +143,13 @@ Criminals are creatures of habit:
 │   │ (KPIs)   │  │ Predict  │  │ (Leaflet)│  │ Graph    │    │
 │   └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
 │                                                               │
-├───────────────────────────────────────────────────────────────┤
-│                    ACTION LAYER                                │
+├─────────────────────────────────────────────────────────────┤
+│                    STEP 4: ACTION                              │
 │                                                               │
-│   Prediction → CCTNS Alert → Nearest Police Station →         │
-│   Patrol Deployed to Zone → ATM Surveillance → Interception   │
-└───────────────────────────────────────────────────────────────┘
+│   Prediction → Dispatch Alert → CCTNS →                       │
+│   Nearest Police Station → Patrol Deployed →                  │
+│   ATM Zone Surveillance → Cash Puller Intercepted             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -327,7 +366,7 @@ We chose a **"Dark Command Center"** aesthetic for specific reasons:
 ## 🛡️ How We Address Key Challenges
 
 ### Challenge 1: "How do you know WHERE criminals will withdraw?"
-**Our Answer**: We integrate with **CFCFRMS** (Citizen Financial Cyber Fraud Reporting & Management System). When a victim calls 1930, CFCFRMS traces the money through mule accounts. The **destination bank branches** give us the geographic signal. Our model combines this with historical ATM withdrawal patterns to predict the zone.
+**Our Answer**: We don't predict from the victim's location alone. When CFCFRMS traces the money through the mule chain (Account A → B → C → D), it identifies the **last account holding the funds** and its bank branch location. THAT is our geographic signal. Our XGBoost model takes that last-mile location + complaint features and predicts which ATM zone the cash puller will use — because cash pullers operate within 20-30 km of the last mule account.
 
 ### Challenge 2: "Your data is synthetic — how can you trust the model?"
 **Our Answer**: Our synthetic data is modeled on real patterns from **NCRB reports**, **I4C advisories**, and documented fraud corridors (Jamtara, Mewat, Nuh). Our architecture is **data-agnostic** — swap synthetic CSVs with real NCRP data and the system works identically. The model learns the same patterns faster with real data.
