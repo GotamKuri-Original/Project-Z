@@ -29,7 +29,7 @@ export default function NetworkPage() {
           mule_recruiter: "#ffd32a", cash_puller: "#38bdf8", mule_account: "#06d6a0",
         };
 
-        const nodes = new DataSet(data.nodes.map((n: any) => ({
+        const nodes = new DataSet<any, any>(data.nodes.map((n: any) => ({
           id: n.id, label: n.label,
           color: {
             background: roleColors[n.role] || "#06d6a0",
@@ -41,7 +41,7 @@ export default function NetworkPage() {
           title: `${n.role.toUpperCase()} | ${n.city} | Risk: ${n.risk}`,
         })));
 
-        const edges = new DataSet(data.edges.map((e: any, i: number) => ({
+        const edges = new DataSet<any, any>(data.edges.map((e: any, i: number) => ({
           id: i, from: e.from, to: e.to,
           color: { color: "rgba(56,189,248,0.12)", highlight: "#06d6a0" },
           width: e.relation === "commands" ? 2.5 : 1,
@@ -49,7 +49,7 @@ export default function NetworkPage() {
           smooth: { type: "continuous" },
         })));
 
-        new Network(containerRef.current!, { nodes, edges }, {
+        new Network(containerRef.current!, { nodes: nodes as any, edges: edges as any }, {
           physics: { stabilization: { iterations: 80 }, barnesHut: { gravitationalConstant: -4000, springLength: 150 } },
           interaction: { hover: true, tooltipDelay: 100, zoomSpeed: 0.5 },
           nodes: { shape: "dot", borderWidth: 2 },
