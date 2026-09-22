@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+*.pkl
+*.joblib
+
+# Node
+node_modules/
+.next/
+out/
+
+# Data
+backend/app/data/datasets/*.csv
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
