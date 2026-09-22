@@ -59,6 +59,8 @@ def engineer_features(df):
     - fraud_type (encoded) — different fraud types have different cash-out patterns
     - amount — higher amounts may go to different withdrawal corridors
     - victim_city (encoded) — origin city determines likely cash-out corridors
+    - last_mule_city (encoded) — CFCFRMS traced endpoint, strongest geographic signal
+    - mule_chain_length — number of hops in the mule chain
     - hour_of_day — time of fraud affects withdrawal timing
     - day_of_week — weekday vs weekend patterns
     - is_weekend — binary flag
@@ -71,10 +73,12 @@ def engineer_features(df):
     # Encode categorical variables
     fraud_encoder = LabelEncoder()
     city_encoder = LabelEncoder()
+    mule_city_encoder = LabelEncoder()
     target_encoder = LabelEncoder()
 
     df['fraud_type_encoded'] = fraud_encoder.fit_transform(df['fraud_type_comp'])
     df['victim_city_encoded'] = city_encoder.fit_transform(df['victim_city_comp'])
+    df['last_mule_city_encoded'] = mule_city_encoder.fit_transform(df['last_mule_city'])
     df['withdrawal_city_encoded'] = target_encoder.fit_transform(df['atm_city'])
 
     # Additional engineered features
@@ -95,6 +99,8 @@ def engineer_features(df):
     feature_cols = [
         'fraud_type_encoded',
         'victim_city_encoded',
+        'last_mule_city_encoded',
+        'mule_chain_length',
         'amount_log',
         'amount_bucket',
         'hour_of_day',
@@ -112,7 +118,7 @@ def engineer_features(df):
     print(f"  Feature names: {feature_cols}")
     print(f"  Target classes: {len(target_encoder.classes_)} cities")
 
-    return X, y, feature_cols, fraud_encoder, city_encoder, target_encoder
+    return X, y, feature_cols, fraud_encoder, city_encoder, mule_city_encoder, target_encoder
 
 
 def train_model(X, y, feature_cols):
@@ -177,7 +183,7 @@ def train_model(X, y, feature_cols):
     return model, accuracy, f1, feat_imp, report
 
 
-def save_model(model, fraud_encoder, city_encoder, target_encoder, feature_cols, accuracy, f1, feat_imp):
+def save_model(model, fraud_encoder, city_encoder, mule_city_encoder, target_encoder, feature_cols, accuracy, f1, feat_imp):
     """Save everything needed for prediction."""
     print("\nSaving model and encoders...")
 
@@ -193,6 +199,7 @@ def save_model(model, fraud_encoder, city_encoder, target_encoder, feature_cols,
         pickle.dump({
             'fraud_encoder': fraud_encoder,
             'city_encoder': city_encoder,
+            'mule_city_encoder': mule_city_encoder,
             'target_encoder': target_encoder,
             'feature_cols': feature_cols,
         }, f)
@@ -208,6 +215,7 @@ def save_model(model, fraud_encoder, city_encoder, target_encoder, feature_cols,
         'target_cities': list(target_encoder.classes_),
         'fraud_types': list(fraud_encoder.classes_),
         'victim_cities': list(city_encoder.classes_),
+        'mule_cities': list(mule_city_encoder.classes_),
     }
     metadata_path = os.path.join(MODEL_DIR, 'model_metadata.json')
     with open(metadata_path, 'w') as f:
@@ -225,13 +233,13 @@ if __name__ == "__main__":
     df = load_and_prepare_data()
 
     # Step 2: Engineer features
-    X, y, feature_cols, fraud_enc, city_enc, target_enc = engineer_features(df)
+    X, y, feature_cols, fraud_enc, city_enc, mule_enc, target_enc = engineer_features(df)
 
     # Step 3: Train model
     model, accuracy, f1, feat_imp, report = train_model(X, y, feature_cols)
 
     # Step 4: Save everything
-    save_model(model, fraud_enc, city_enc, target_enc, feature_cols, accuracy, f1, feat_imp)
+    save_model(model, fraud_enc, city_enc, mule_enc, target_enc, feature_cols, accuracy, f1, feat_imp)
 
     print()
     print("=" * 60)

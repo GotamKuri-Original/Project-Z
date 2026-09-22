@@ -364,7 +364,23 @@ def generate_cash_withdrawals(n=30000, complaints_df=None, atm_df=None):
         
         # Determine withdrawal city based on cash-out corridors
         corridor_key = victim_city if victim_city in CASHOUT_CORRIDORS else "default"
-        withdrawal_city = random.choice(CASHOUT_CORRIDORS[corridor_key])
+        corridor_cities = CASHOUT_CORRIDORS[corridor_key]
+        withdrawal_city = random.choice(corridor_cities)
+        
+        # Last mule account city — the endpoint of the mule chain
+        # Usually in the same corridor as withdrawal, sometimes same city
+        if random.random() < 0.6:
+            # 60% chance: last mule is in the same city as withdrawal
+            last_mule_city = withdrawal_city
+        elif random.random() < 0.8:
+            # 32% chance: last mule is in a nearby corridor city
+            last_mule_city = random.choice(corridor_cities)
+        else:
+            # 8% chance: last mule is in a completely different city (harder cases)
+            last_mule_city = random.choice(INDIAN_CITIES)["city"]
+
+        # Number of mule accounts in the chain (2-5 hops)
+        mule_chain_length = random.choices([2, 3, 4, 5], weights=[0.25, 0.40, 0.25, 0.10], k=1)[0]
         
         # Find ATMs in that city
         city_atms = atm_df[atm_df["city"] == withdrawal_city]
@@ -398,6 +414,8 @@ def generate_cash_withdrawals(n=30000, complaints_df=None, atm_df=None):
             "delay_hours": round(delay_hours, 2),
             "fraud_type": fraud_type,
             "victim_city": victim_city,
+            "last_mule_city": last_mule_city,
+            "mule_chain_length": mule_chain_length,
         })
     
     df = pd.DataFrame(withdrawals)

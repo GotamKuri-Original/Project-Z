@@ -20,12 +20,18 @@ const CITIES = [
   { city: "Jaipur", state: "Rajasthan" }, { city: "Lucknow", state: "Uttar Pradesh" },
   { city: "Chandigarh", state: "Chandigarh" }, { city: "Patna", state: "Bihar" },
   { city: "Surat", state: "Gujarat" }, { city: "Indore", state: "Madhya Pradesh" },
-  { city: "Kochi", state: "Kerala" },
+  { city: "Kochi", state: "Kerala" }, { city: "Nuh", state: "Haryana" },
+  { city: "Mathura", state: "Uttar Pradesh" }, { city: "Bharatpur", state: "Rajasthan" },
+  { city: "Jamtara", state: "Jharkhand" }, { city: "Deoghar", state: "Jharkhand" },
+  { city: "Ranchi", state: "Jharkhand" }, { city: "Nagpur", state: "Maharashtra" },
+  { city: "Coimbatore", state: "Tamil Nadu" }, { city: "Guwahati", state: "Assam" },
+  { city: "Visakhapatnam", state: "Andhra Pradesh" },
 ];
 
 export default function PredictPage() {
   const [form, setForm] = useState({
     fraud_type: "UPI_FRAUD", amount: 150000, victim_city: "Delhi",
+    last_mule_city: "Mathura", mule_chain_length: 3,
     hour_of_day: 20, day_of_week: 3, reporting_delay_mins: 25,
   });
   const [result, setResult] = useState<any>(null);
@@ -98,6 +104,32 @@ export default function PredictPage() {
                   <option key={c.city} value={c.city}>{c.city}, {c.state}</option>
                 ))}
               </select>
+            </div>
+
+            {/* CFCFRMS Section */}
+            <div style={{ borderTop: "1px solid rgba(56,189,248,0.1)", paddingTop: 16, marginTop: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 24, height: 24, borderRadius: 6, background: "rgba(6,214,160,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
+                  🔗
+                </div>
+                <span style={{ fontSize: 11, color: "#06d6a0", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>CFCFRMS Mule Chain Data</span>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Last Mule Account City (Traced)
+                </label>
+                <select value={form.last_mule_city} onChange={(e) => setForm({ ...form, last_mule_city: e.target.value })} className="input-field">
+                  {CITIES.map((c) => (
+                    <option key={c.city} value={c.city}>{c.city}, {c.state}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Mule Chain Length (Hops)
+                </label>
+                <input type="number" min={2} max={6} value={form.mule_chain_length} onChange={(e) => setForm({ ...form, mule_chain_length: Number(e.target.value) })} className="input-field" />
+              </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

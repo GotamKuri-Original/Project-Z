@@ -25,6 +25,8 @@ class ComplaintInput(BaseModel):
     amount: int = 50000
     victim_city: str = "Delhi"
     victim_state: str = "Delhi"
+    last_mule_city: str = "Mathura"
+    mule_chain_length: int = 3
     hour_of_day: int = 18
     day_of_week: int = 3
     reporting_delay_mins: int = 30
@@ -91,6 +93,7 @@ def _build_features(complaint: ComplaintInput) -> np.ndarray:
     """
     fraud_enc = _encode_safe(_encoders['fraud_encoder'], complaint.fraud_type)
     city_enc = _encode_safe(_encoders['city_encoder'], complaint.victim_city)
+    mule_city_enc = _encode_safe(_encoders['mule_city_encoder'], complaint.last_mule_city)
 
     amount_log = np.log1p(complaint.amount)
 
@@ -123,16 +126,18 @@ def _build_features(complaint: ComplaintInput) -> np.ndarray:
 
     # Feature vector — MUST match train_model.py order
     features = np.array([[
-        fraud_enc,          # fraud_type_encoded
-        city_enc,           # victim_city_encoded
-        amount_log,         # amount_log
-        amount_bucket,      # amount_bucket
+        fraud_enc,              # fraud_type_encoded
+        city_enc,               # victim_city_encoded
+        mule_city_enc,          # last_mule_city_encoded (CFCFRMS signal)
+        complaint.mule_chain_length,  # mule_chain_length
+        amount_log,             # amount_log
+        amount_bucket,          # amount_bucket
         complaint.hour_of_day,  # hour_of_day
         complaint.day_of_week,  # day_of_week
-        is_weekend,         # is_weekend
+        is_weekend,             # is_weekend
         complaint.reporting_delay_mins,  # reporting_delay_mins
-        is_night,           # is_night
-        delay_bucket,       # delay_bucket
+        is_night,               # is_night
+        delay_bucket,           # delay_bucket
     ]])
 
     return features
