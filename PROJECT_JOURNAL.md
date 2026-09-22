@@ -384,6 +384,9 @@ We chose a **"Dark Command Center"** aesthetic for specific reasons:
 ### Challenge 5: "Can this scale to 8,000 complaints/day?"
 **Our Answer**: SQLite is for the prototype. Production would use **PostgreSQL/TimescaleDB** for time-series data, **Redis** for caching, and **containerized microservices** on Kubernetes. Our prediction endpoint responds in under 2 seconds — fast enough for real-time alerts.
 
+### Challenge 6: "The scammer has the debit card, they can go to ANY ATM in the world. What are you even solving?"
+**Our Answer**: The scammer who calls the victim is **NOT** the person who withdraws the cash. The operation has layers: Mastermind → Caller → Mule Account Holder → **Cash Puller**. The cash puller is a low-level operative who lives in a specific area (like Mathura). They don't fly across the country; they sprint to ATMs they know within a 20-30 km radius of their home. Because the account will be frozen within hours, they are fighting the clock. We are predicting **which local zone's cash pullers will be activated**, giving police the upper hand in that specific 2-hour window.
+
 ---
 
 ## 📂 Project Structure
