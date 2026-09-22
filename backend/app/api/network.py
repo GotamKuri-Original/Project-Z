@@ -68,6 +68,13 @@ def get_network(gang_id: str = None, limit: int = 100):
         gang_mules = mules[mules["controlled_by"].isin(gang_suspects)]["account_id"].tolist()[:50]
         node_ids = set(gang_suspects + gang_mules)
         G = G.subgraph(node_ids)
+    else:
+        # If no specific gang, extract top 3 gangs to form a connected web instead of random scattered nodes
+        top_gangs = suspects["gang_id"].value_counts().head(3).index.tolist()
+        top_suspects = suspects[suspects["gang_id"].isin(top_gangs)]["suspect_id"].tolist()
+        top_mules = mules[mules["controlled_by"].isin(top_suspects)]["account_id"].tolist()
+        node_ids = set(top_suspects + top_mules)
+        G = G.subgraph(node_ids)
     
     # Compute PageRank (who's the kingpin?)
     try:
@@ -77,7 +84,8 @@ def get_network(gang_id: str = None, limit: int = 100):
     
     # Build nodes for vis.js
     nodes = []
-    for node_id in list(G.nodes())[:limit]:
+    # If the subgraph is still too large, we limit it gracefully, but it's now mostly connected
+    for node_id in list(G.nodes())[:max(limit, len(G.nodes()))]:
         data = G.nodes[node_id]
         pr = pagerank.get(node_id, 0)
         

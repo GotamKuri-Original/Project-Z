@@ -50,7 +50,11 @@ export default function NetworkPage() {
         })));
 
         new Network(containerRef.current!, { nodes: nodes as any, edges: edges as any }, {
-          physics: { stabilization: { iterations: 80 }, barnesHut: { gravitationalConstant: -4000, springLength: 150 } },
+          physics: { 
+            solver: "forceAtlas2Based",
+            forceAtlas2Based: { gravitationalConstant: -120, centralGravity: 0.015, springLength: 100, springConstant: 0.08 },
+            stabilization: { iterations: 150, fit: true },
+          },
           interaction: { hover: true, tooltipDelay: 100, zoomSpeed: 0.5 },
           nodes: { shape: "dot", borderWidth: 2 },
         });
