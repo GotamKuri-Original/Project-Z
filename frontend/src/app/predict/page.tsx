@@ -22,6 +22,12 @@ interface PredictionResponse {
     label: string;
     importance: number;
   }>;
+  money_flow: Array<{
+    from: string;
+    to: string;
+    amount: number;
+    method: string;
+  }>;
   recommended_action: string;
 }
 
@@ -301,6 +307,54 @@ export default function PredictPage() {
                           </span>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Money Flow Diagram ── */}
+                {result.money_flow && result.money_flow.length > 0 && (
+                  <div className="glass-card" style={{ padding: 14, marginTop: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
+                        MONEY FLOW — MULE CHAIN
+                      </p>
+                      <span className="badge badge-critical">TRACE</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      {result.money_flow.map((step, i) => {
+                        const isLast = i === result.money_flow.length - 1;
+                        const nodeColor = i === 0 ? "#06d6a0" : isLast ? "#ef4444" : "#38bdf8";
+                        return (
+                          <div key={i}>
+                            {/* Node */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <div style={{
+                                width: 10, height: 10, borderRadius: "50%",
+                                background: nodeColor, flexShrink: 0,
+                                boxShadow: `0 0 6px ${nodeColor}50`,
+                              }} />
+                              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 6, border: `1px solid ${nodeColor}20` }}>
+                                <div>
+                                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{step.from}</span>
+                                  <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 8 }}>→ {step.to}</span>
+                                </div>
+                                <div style={{ textAlign: "right" }}>
+                                  <span style={{ fontSize: 12, fontWeight: 700, color: nodeColor, fontFamily: "'JetBrains Mono', monospace" }}>
+                                    ₹{step.amount.toLocaleString("en-IN")}
+                                  </span>
+                                  <span style={{ fontSize: 9, color: "var(--text-muted)", marginLeft: 6, fontFamily: "'JetBrains Mono', monospace" }}>
+                                    {step.method}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            {/* Connector line */}
+                            {!isLast && (
+                              <div style={{ width: 2, height: 16, background: "rgba(255,255,255,0.08)", marginLeft: 4, borderRadius: 1 }} />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

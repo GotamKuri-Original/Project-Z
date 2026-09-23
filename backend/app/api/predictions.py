@@ -238,6 +238,55 @@ def predict_withdrawal_location(complaint: ComplaintInput):
                 "importance": round(float(imp * 100), 1),
             })
 
+    # ── Money Flow: Mule Chain Visualization ──
+    import random
+    random.seed(hash(complaint.victim_city + complaint.last_mule_city + str(complaint.amount)))
+
+    # Build the mule chain: Victim → Mule1 → Mule2 → ... → ATM Withdrawal
+    mule_cities_pool = ["Mathura", "Bharatpur", "Nuh", "Jamtara", "Deoghar", "Ranchi", 
+                        "Mewat", "Surat", "Indore", "Nagpur", "Patna"]
+    # Remove victim and last mule to avoid duplicates
+    available = [c for c in mule_cities_pool if c not in [complaint.victim_city, complaint.last_mule_city]]
+    
+    chain_len = min(complaint.mule_chain_length, len(available) + 2)
+    withdrawal_city = zone_predictions[0]["city"] if zone_predictions else "Unknown"
+    
+    # Build the flow
+    money_flow = []
+    remaining = complaint.amount
+    
+    # Step 1: Victim sends money
+    first_mule = complaint.last_mule_city if chain_len <= 2 else random.choice(available[:3])
+    money_flow.append({
+        "from": f"Victim ({complaint.victim_city})",
+        "to": f"Mule 1 ({first_mule})",
+        "amount": remaining,
+        "method": complaint.fraud_type.replace("_", " "),
+    })
+    
+    # Intermediate mules
+    prev_city = first_mule
+    for hop in range(2, chain_len):
+        next_city = complaint.last_mule_city if hop == chain_len - 1 else random.choice(available)
+        # Each hop skims 5-15%
+        skim = int(remaining * random.uniform(0.05, 0.15))
+        remaining -= skim
+        money_flow.append({
+            "from": f"Mule {hop-1} ({prev_city})",
+            "to": f"Mule {hop} ({next_city})",
+            "amount": remaining,
+            "method": "UPI Transfer" if random.random() > 0.3 else "NEFT/IMPS",
+        })
+        prev_city = next_city
+    
+    # Final: Last mule withdraws at ATM
+    money_flow.append({
+        "from": f"Mule {max(chain_len-1, 1)} ({prev_city})",
+        "to": f"ATM ({withdrawal_city})",
+        "amount": remaining,
+        "method": "Cash Withdrawal",
+    })
+
     return {
         "complaint": complaint.dict(),
         "prediction": {
@@ -253,6 +302,7 @@ def predict_withdrawal_location(complaint: ComplaintInput):
             },
         },
         "explainability": feature_importance_data,
+        "money_flow": money_flow,
         "recommended_action": (
             "DEPLOY TEAM IMMEDIATELY — XGBoost model predicts high-probability cash withdrawal in target zones"
             if top_confidence > 30
