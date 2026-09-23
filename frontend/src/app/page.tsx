@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getDashboard } from "@/lib/api";
 import { motion } from "framer-motion";
 import {
@@ -20,14 +20,41 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 18 } }
 };
 
+// Animated counter hook
+function useAnimatedCount(target: number, duration = 1200) {
+  const [count, setCount] = useState(0);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    const start = performance.now();
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      setCount(Math.floor(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+  return count;
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  const animated = useAnimatedCount(value);
+  return <>{animated.toLocaleString("en-IN")}</>;
+}
+
 function MetricCard({ label, value, sub, color }: {
   label: string; value: string | number; sub?: string; color: string;
 }) {
+  // Parse numeric portion for animation
+  const isNumeric = typeof value === "number";
+
   return (
     <motion.div variants={itemVariants} className={`glass-card stat-card ${color}`} style={{ padding: "14px 16px" }}>
       <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.8px", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>{label}</p>
       <p style={{ fontSize: 26, fontWeight: 800, marginTop: 4, color: `var(--${color})`, letterSpacing: -0.5, fontFamily: "'JetBrains Mono', monospace" }}>
-        {typeof value === "number" ? value.toLocaleString("en-IN") : value}
+        {isNumeric ? <AnimatedNumber value={value} /> : value}
       </p>
       {sub && <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{sub}</p>}
     </motion.div>
