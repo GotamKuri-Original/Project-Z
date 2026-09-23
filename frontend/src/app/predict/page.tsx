@@ -4,7 +4,7 @@ import { useState } from "react";
 import { predict } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 
-export interface PredictionResponse {
+interface PredictionResponse {
   prediction: {
     risk_level: string;
     overall_confidence: number;
@@ -21,12 +21,12 @@ export interface PredictionResponse {
 }
 
 const FRAUD_TYPES = [
-  { value: "UPI_FRAUD", label: "UPI Fraud", icon: "📱" },
-  { value: "OTP_PHISHING", label: "OTP Phishing", icon: "🔑" },
-  { value: "KYC_FRAUD", label: "KYC Fraud", icon: "🪪" },
-  { value: "INVESTMENT_SCAM", label: "Investment Scam", icon: "📈" },
-  { value: "SEXTORTION", label: "Sextortion", icon: "🔒" },
-  { value: "COURIER_SCAM", label: "Courier Scam", icon: "📦" },
+  { value: "UPI_FRAUD", label: "UPI Fraud" },
+  { value: "OTP_PHISHING", label: "OTP Phishing" },
+  { value: "KYC_FRAUD", label: "KYC Fraud" },
+  { value: "INVESTMENT_SCAM", label: "Investment Scam" },
+  { value: "SEXTORTION", label: "Sextortion" },
+  { value: "COURIER_SCAM", label: "Courier Scam" },
 ];
 
 const CITIES = [
@@ -44,6 +44,18 @@ const CITIES = [
   { city: "Coimbatore", state: "Tamil Nadu" }, { city: "Guwahati", state: "Assam" },
   { city: "Visakhapatnam", state: "Andhra Pradesh" },
 ];
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label style={{
+      fontSize: 10, color: "var(--text-muted)", fontWeight: 600,
+      marginBottom: 4, display: "block", textTransform: "uppercase",
+      letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace",
+    }}>
+      {children}
+    </label>
+  );
+}
 
 export default function PredictPage() {
   const [form, setForm] = useState({
@@ -68,60 +80,44 @@ export default function PredictPage() {
     setLoading(false);
   };
 
-  const riskConfig: Record<string, { bg: string; border: string; color: string; glow: string }> = {
-    CRITICAL: { bg: "rgba(255,71,87,0.08)", border: "rgba(255,71,87,0.3)", color: "#ff4757", glow: "0 0 30px rgba(255,71,87,0.15)" },
-    HIGH: { bg: "rgba(255,159,67,0.08)", border: "rgba(255,159,67,0.3)", color: "#ff9f43", glow: "0 0 30px rgba(255,159,67,0.15)" },
-    MEDIUM: { bg: "rgba(255,211,42,0.08)", border: "rgba(255,211,42,0.3)", color: "#ffd32a", glow: "0 0 30px rgba(255,211,42,0.15)" },
+  const riskColors: Record<string, string> = {
+    CRITICAL: "#ef4444", HIGH: "#f59e0b", MEDIUM: "#eab308",
   };
 
   return (
     <div className="fade-in">
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800 }}>Threat Prediction Engine</h1>
-        <p style={{ color: "#475569", marginTop: 4, fontSize: 14 }}>
-          Enter complaint details → AI predicts cash withdrawal locations in real-time
-        </p>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 24, alignItems: "start" }}>
-        {/* Input Form */}
-        <motion.div 
-          initial={{ opacity: 0, x: -30 }} 
-          animate={{ opacity: 1, x: 0 }} 
-          transition={{ type: "spring", stiffness: 100 }}
-          className="glass-card" 
-          style={{ padding: 28 }}
+      <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16, alignItems: "start" }}>
+        {/* ─── Input Panel ─── */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: "spring", stiffness: 120, damping: 18 }}
+          className="glass-card"
+          style={{ padding: 16 }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(56,189,248,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-              📝
-            </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Complaint Details</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid var(--border-color)" }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              COMPLAINT INPUT
+            </span>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
-              <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Fraud Type
-              </label>
+              <FieldLabel>Fraud Type</FieldLabel>
               <select value={form.fraud_type} onChange={(e) => setForm({ ...form, fraud_type: e.target.value })} className="input-field">
                 {FRAUD_TYPES.map((ft) => (
-                  <option key={ft.value} value={ft.value}>{ft.icon} {ft.label}</option>
+                  <option key={ft.value} value={ft.value}>{ft.label}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Amount Stolen (₹)
-              </label>
+              <FieldLabel>Amount Stolen (₹)</FieldLabel>
               <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} className="input-field" />
             </div>
 
             <div>
-              <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Victim City
-              </label>
+              <FieldLabel>Victim City</FieldLabel>
               <select value={form.victim_city} onChange={(e) => setForm({ ...form, victim_city: e.target.value })} className="input-field">
                 {CITIES.map((c) => (
                   <option key={c.city} value={c.city}>{c.city}, {c.state}</option>
@@ -130,185 +126,162 @@ export default function PredictPage() {
             </div>
 
             {/* CFCFRMS Section */}
-            <div style={{ borderTop: "1px solid rgba(56,189,248,0.1)", paddingTop: 16, marginTop: 4 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <div style={{ width: 24, height: 24, borderRadius: 6, background: "rgba(6,214,160,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
-                  🔗
-                </div>
-                <span style={{ fontSize: 11, color: "#06d6a0", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>CFCFRMS Mule Chain Data</span>
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Last Mule Account City (Traced)
-                </label>
+            <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: 12, marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: "var(--cyan)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
+                CFCFRMS MULE CHAIN
+              </span>
+              <div style={{ marginTop: 8 }}>
+                <FieldLabel>Last Mule City</FieldLabel>
                 <select value={form.last_mule_city} onChange={(e) => setForm({ ...form, last_mule_city: e.target.value })} className="input-field">
                   {CITIES.map((c) => (
                     <option key={c.city} value={c.city}>{c.city}, {c.state}</option>
                   ))}
                 </select>
               </div>
-              <div style={{ marginTop: 12 }}>
-                <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Mule Chain Length (Hops)
-                </label>
+              <div style={{ marginTop: 8 }}>
+                <FieldLabel>Chain Length (Hops)</FieldLabel>
                 <input type="number" min={2} max={6} value={form.mule_chain_length} onChange={(e) => setForm({ ...form, mule_chain_length: Number(e.target.value) })} className="input-field" />
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div>
-                <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Hour of Fraud
-                </label>
+                <FieldLabel>Hour of Fraud</FieldLabel>
                 <input type="number" min={0} max={23} value={form.hour_of_day} onChange={(e) => setForm({ ...form, hour_of_day: Number(e.target.value) })} className="input-field" />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Report Delay (min)
-                </label>
+                <FieldLabel>Report Delay (min)</FieldLabel>
                 <input type="number" value={form.reporting_delay_mins} onChange={(e) => setForm({ ...form, reporting_delay_mins: Number(e.target.value) })} className="input-field" />
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: 8 }}>
-              {loading ? "⏳ ANALYZING..." : "🔍 ANALYZE THREAT"}
+            <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: 4, width: "100%" }}>
+              {loading ? "ANALYZING..." : "RUN PREDICTION"}
             </button>
           </form>
         </motion.div>
 
-        {/* Results */}
-        <div style={{ position: "relative" }}>
+        {/* ─── Results Panel ─── */}
+        <div>
           <AnimatePresence mode="wait">
             {result && showResult ? (
-              <motion.div 
+              <motion.div
                 key="results"
-                initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 120, damping: 14 }}
-                style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
               >
-                {/* Risk Level Hero Card */}
-              {(() => {
-                const risk = riskConfig[result.prediction.risk_level] || riskConfig.MEDIUM;
-                return (
-                  <div style={{
-                    background: risk.bg, border: `1px solid ${risk.border}`,
-                    borderRadius: 16, padding: "28px 32px", boxShadow: risk.glow,
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <p style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600 }}>
-                          Threat Assessment
-                        </p>
-                        <p style={{ fontSize: 42, fontWeight: 900, color: risk.color, letterSpacing: -1, marginTop: 4 }}>
-                          {result.prediction.risk_level}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <p style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600 }}>
-                          Confidence
-                        </p>
-                        <p style={{ fontSize: 42, fontWeight: 900, color: risk.color, letterSpacing: -1, marginTop: 4 }}>
-                          {result.prediction.overall_confidence}%
-                        </p>
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 16, padding: "10px 14px", background: "rgba(0,0,0,0.2)", borderRadius: 8, fontSize: 13, color: "#94a3b8" }}>
-                      ⏱️ Estimated withdrawal window: <span style={{ color: "#e2e8f0", fontWeight: 600 }}>{result.prediction.estimated_withdrawal_window}</span>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Action Card */}
-              <div className="glass-card" style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 20 }}>🚨</span>
-                  <div>
-                    <p style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>Recommended Action</p>
-                    <p style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 500, marginTop: 2 }}>{result.recommended_action}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  style={{
-                    background: "linear-gradient(135deg, #ff4757, #ff6b81)",
-                    color: "white", padding: "10px 18px", borderRadius: 8, fontSize: 12,
-                    fontWeight: 700, border: "none", cursor: "pointer",
-                    boxShadow: "0 4px 15px rgba(255, 71, 87, 0.4)",
-                    whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.5px"
-                  }}
-                  onClick={() => alert("✅ ALERT SUCCESSFULLY DISPATCHED TO CCTNS!\n\nNearest police patrol teams in predicted zones have been notified to monitor high-risk ATMs.")}
-                >
-                  📡 Dispatch Alert
-                </button>
-              </div>
-
-              {/* Predicted Zones */}
-              <div className="glass-card" style={{ padding: 24 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#ff4757" }}>◉</span> Predicted Withdrawal Zones
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {result.prediction.zones.map((zone: any, i: number) => {
-                    const medals = ["🥇", "🥈", "🥉", "📍", "📍"];
-                    const barWidth = `${zone.confidence}%`;
-                    return (
-                      <div key={i} style={{
-                        background: "rgba(6,9,24,0.6)", borderRadius: 10, padding: "14px 16px",
-                        border: i === 0 ? "1px solid rgba(255,71,87,0.2)" : "1px solid rgba(56,189,248,0.05)",
-                        position: "relative", overflow: "hidden",
-                      }}>
-                        {/* Progress bar background */}
-                        <div style={{
-                          position: "absolute", top: 0, left: 0, bottom: 0,
-                          width: barWidth,
-                          background: i === 0 ? "rgba(255,71,87,0.06)" : "rgba(56,189,248,0.04)",
-                          transition: "width 0.8s ease",
-                        }} />
-                        <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div>
-                            <p style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                              {medals[i]} {zone.city}, {zone.state}
-                            </p>
-                            <p style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{zone.num_high_risk_atms} high-risk ATMs identified</p>
-                          </div>
-                          <div style={{ textAlign: "right" }}>
-                            <p style={{
-                              fontSize: 20, fontWeight: 800,
-                              color: zone.risk_level === "CRITICAL" ? "#ff4757" : zone.risk_level === "HIGH" ? "#ff9f43" : "#ffd32a",
-                            }}>
-                              {zone.confidence}%
-                            </p>
-                            <span className={`badge badge-${zone.risk_level.toLowerCase()}`}>{zone.risk_level}</span>
-                          </div>
+                {/* Threat Assessment Header */}
+                {(() => {
+                  const color = riskColors[result.prediction.risk_level] || "#eab308";
+                  return (
+                    <div className="glass-card" style={{
+                      padding: 16, borderLeft: `3px solid ${color}`,
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                            THREAT LEVEL
+                          </p>
+                          <p style={{ fontSize: 28, fontWeight: 800, color, letterSpacing: -0.5, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {result.prediction.risk_level}
+                          </p>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                            CONFIDENCE
+                          </p>
+                          <p style={{ fontSize: 28, fontWeight: 800, color, letterSpacing: -0.5, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {result.prediction.overall_confidence}%
+                          </p>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div style={{ marginTop: 10, padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 6, fontSize: 11, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace" }}>
+                        ETA: <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{result.prediction.estimated_withdrawal_window}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Action Bar */}
+                <div className="glass-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>ACTION</p>
+                    <p style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500, marginTop: 2 }}>{result.recommended_action}</p>
+                  </div>
+                  <button
+                    type="button"
+                    style={{
+                      background: "var(--red)", color: "white", padding: "8px 14px", borderRadius: 6, fontSize: 11,
+                      fontWeight: 700, border: "none", cursor: "pointer", whiteSpace: "nowrap",
+                      textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                    onClick={() => alert("✅ ALERT DISPATCHED TO CCTNS\n\nNearest patrol teams notified to monitor predicted ATM zones.")}
+                  >
+                    DISPATCH
+                  </button>
                 </div>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="glass-card" 
-              style={{ padding: "80px 40px", textAlign: "center" }}
-            >
-              <div style={{ fontSize: 64, marginBottom: 16 }}>🎯</div>
-              <p style={{ fontSize: 20, fontWeight: 700, color: "#e2e8f0" }}>Awaiting Threat Data</p>
-              <p style={{ fontSize: 14, color: "#475569", marginTop: 8 }}>
-                Fill in complaint details and click <span className="gradient-text" style={{ fontWeight: 700 }}>&quot;Analyze Threat&quot;</span>
-              </p>
-              <p style={{ fontSize: 12, color: "#334155", marginTop: 16 }}>
-                AI will predict the most likely ATM zones where criminals will withdraw stolen funds
-              </p>
-            </motion.div>
-          )}
+
+                {/* Predicted Zones */}
+                <div className="glass-card" style={{ padding: 14 }}>
+                  <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                    PREDICTED WITHDRAWAL ZONES
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {result.prediction.zones.map((zone, i) => {
+                      const barWidth = `${zone.confidence}%`;
+                      const zoneColor = zone.risk_level === "CRITICAL" ? "#ef4444" : zone.risk_level === "HIGH" ? "#f59e0b" : "#eab308";
+                      return (
+                        <div key={i} style={{
+                          background: "rgba(255,255,255,0.02)", borderRadius: 6, padding: "10px 12px",
+                          border: i === 0 ? `1px solid rgba(239,68,68,0.15)` : "1px solid var(--border-color)",
+                          position: "relative", overflow: "hidden",
+                        }}>
+                          <div style={{
+                            position: "absolute", top: 0, left: 0, bottom: 0,
+                            width: barWidth, background: i === 0 ? "rgba(239,68,68,0.06)" : "rgba(56,189,248,0.04)",
+                            transition: "width 0.8s ease",
+                          }} />
+                          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div>
+                              <p style={{ fontWeight: 600, fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
+                                <span style={{ color: "var(--text-muted)", marginRight: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>#{i + 1}</span>
+                                {zone.city}, {zone.state}
+                              </p>
+                              <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>
+                                {zone.num_high_risk_atms} high-risk ATMs
+                              </p>
+                            </div>
+                            <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontSize: 16, fontWeight: 800, color: zoneColor, fontFamily: "'JetBrains Mono', monospace" }}>
+                                {zone.confidence}%
+                              </span>
+                              <span className={`badge badge-${zone.risk_level.toLowerCase()}`}>{zone.risk_level}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="glass-card"
+                style={{ padding: "60px 32px", textAlign: "center" }}
+              >
+                <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>Awaiting Input</p>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
+                  Enter complaint details and run the prediction engine
+                </p>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
