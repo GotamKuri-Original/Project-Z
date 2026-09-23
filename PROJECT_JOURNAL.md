@@ -332,6 +332,14 @@ Judges might challenge this, so here's the defense:
 
 **Why it matters**: Investigative officers need detailed complaint records for case building and FIRs.
 
+### 🌟 "Killer Features" (Competition Winners)
+To elevate the product beyond a standard dashboard, we implemented 5 interactive features specifically designed to wow judges:
+1. **Live Threat Feed**: Real-time streaming feed of incoming complaints on the dashboard.
+2. **Animated KPI Counters**: Metrics spin up from 0 on page load for a dynamic, live command center feel.
+3. **Explainable AI (XAI)**: A horizontal bar chart on the Predict page showing exact feature importance (e.g., Victim Location: 65%) to eliminate the "black box" AI problem.
+4. **Money Flow Sankey Trace**: A visual node-to-node chain showing how money moves from the victim through mule accounts to the final ATM zone.
+5. **Case Investigation Drill-Down**: A sliding side panel on the Complaints page that reveals a colored timeline of events (Fraud → Complaint → Triage) and one-click action buttons.
+
 ---
 
 ## 🎨 Design Philosophy — Why the UI Looks Like This
