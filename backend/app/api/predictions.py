@@ -196,7 +196,6 @@ def predict_withdrawal_location(complaint: ComplaintInput):
                 if len(city_atms) > 0 else []
             ),
         })
-
     # Overall risk assessment
     top_confidence = zone_predictions[0]["confidence"] if zone_predictions else 0
 
@@ -209,6 +208,35 @@ def predict_withdrawal_location(complaint: ComplaintInput):
         "SEXTORTION": "12-72 hours",
         "COURIER_SCAM": "4-24 hours",
     }
+
+    # ── Explainable AI: Feature Importance ──
+    feature_names_readable = {
+        "fraud_type_encoded": f"Fraud Type: {complaint.fraud_type.replace('_', ' ')}",
+        "victim_city_encoded": f"Victim City: {complaint.victim_city}",
+        "last_mule_city_encoded": f"Last Mule City: {complaint.last_mule_city}",
+        "mule_chain_length": f"Mule Chain: {complaint.mule_chain_length} hops",
+        "amount_log": f"Amount: ₹{complaint.amount:,}",
+        "amount_bucket": f"Amount Range",
+        "hour_of_day": f"Hour: {complaint.hour_of_day}:00",
+        "day_of_week": f"Day of Week: {complaint.day_of_week}",
+        "is_weekend": "Weekend" if complaint.day_of_week >= 5 else "Weekday",
+        "reporting_delay_mins": f"Report Delay: {complaint.reporting_delay_mins}m",
+        "is_night": "Night Hours" if (complaint.hour_of_day >= 20 or complaint.hour_of_day <= 5) else "Day Hours",
+        "delay_bucket": "Delay Range",
+    }
+
+    feature_importance_data = []
+    if _model is not None and _metadata is not None:
+        importances = _model.feature_importances_
+        feat_names = _metadata.get("feature_names", [])
+        # Pair up and sort descending
+        paired = sorted(zip(feat_names, importances), key=lambda x: x[1], reverse=True)
+        for fname, imp in paired[:6]:  # Top 6 features
+            feature_importance_data.append({
+                "feature": fname,
+                "label": feature_names_readable.get(fname, fname),
+                "importance": round(float(imp * 100), 1),
+            })
 
     return {
         "complaint": complaint.dict(),
@@ -224,6 +252,7 @@ def predict_withdrawal_location(complaint: ComplaintInput):
                 "features_used": _metadata["feature_names"],
             },
         },
+        "explainability": feature_importance_data,
         "recommended_action": (
             "DEPLOY TEAM IMMEDIATELY — XGBoost model predicts high-probability cash withdrawal in target zones"
             if top_confidence > 30

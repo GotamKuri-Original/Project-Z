@@ -17,6 +17,11 @@ interface PredictionResponse {
       num_high_risk_atms: number;
     }>;
   };
+  explainability: Array<{
+    feature: string;
+    label: string;
+    importance: number;
+  }>;
   recommended_action: string;
 }
 
@@ -266,6 +271,39 @@ export default function PredictPage() {
                     })}
                   </div>
                 </div>
+
+                {/* ── Explainable AI Panel ── */}
+                {result.explainability && result.explainability.length > 0 && (
+                  <div className="glass-card" style={{ padding: 14, marginTop: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
+                        WHY DID THE AI FLAG THIS?
+                      </p>
+                      <span className="badge badge-medium">XAI</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {result.explainability.map((feat, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 11, color: "var(--text-secondary)", minWidth: 160, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {feat.label}
+                          </span>
+                          <div style={{ flex: 1, height: 14, background: "rgba(255,255,255,0.03)", borderRadius: 3, overflow: "hidden", position: "relative" }}>
+                            <div style={{
+                              height: "100%", borderRadius: 3,
+                              width: `${Math.min(feat.importance * 3, 100)}%`,
+                              background: i === 0 ? "#06d6a0" : i === 1 ? "#38bdf8" : "#a78bfa",
+                              opacity: 0.7,
+                              transition: "width 0.8s ease",
+                            }} />
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: i === 0 ? "#06d6a0" : "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", minWidth: 40, textAlign: "right" }}>
+                            {feat.importance}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div
