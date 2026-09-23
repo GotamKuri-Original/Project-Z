@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { getDashboard } from "@/lib/api";
+import { getDashboard, getRecentComplaints } from "@/lib/api";
 import { motion } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -76,10 +76,17 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
+  const [recentComplaints, setRecentComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDashboard().then(setData).catch(console.error).finally(() => setLoading(false));
+    Promise.all([
+      getDashboard(),
+      getRecentComplaints(10),
+    ]).then(([dashData, recent]) => {
+      setData(dashData);
+      setRecentComplaints(recent);
+    }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -141,6 +148,60 @@ export default function DashboardPage() {
         <MetricCard label="Report Delay" value={`${kpis.avg_reporting_delay_mins}m`} sub="Avg. victim response" color="yellow" />
         <MetricCard label="Inference" value="1.2s" sub="Prediction latency" color="cyan" />
       </motion.div>
+
+      {/* ─── Live Threat Feed ─── */}
+      {recentComplaints.length > 0 && (
+        <motion.div
+          variants={itemVariants} initial="hidden" whileInView="show"
+          viewport={{ once: true, amount: 0.1 }}
+          className="glass-card"
+          style={{ padding: 14, marginBottom: 12 }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
+              LIVE THREAT FEED
+            </p>
+            <span className="live-pulse" style={{ fontSize: 10, color: "var(--green)", fontFamily: "'JetBrains Mono', monospace" }}>STREAMING</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {recentComplaints.map((c: any, i: number) => {
+              const fraudColor: Record<string, string> = {
+                UPI_FRAUD: "#ef4444", OTP_PHISHING: "#f59e0b", KYC_FRAUD: "#a78bfa",
+                INVESTMENT_SCAM: "#f472b6", SEXTORTION: "#ef4444", COURIER_SCAM: "#eab308",
+              };
+              return (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "6px 8px",
+                  background: i === 0 ? "rgba(239,68,68,0.04)" : "transparent",
+                  borderRadius: 6, borderLeft: i === 0 ? "2px solid var(--red)" : "2px solid transparent",
+                }}>
+                  <span style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", minWidth: 55 }}>
+                    {c.timestamp?.slice(11, 16) || "--:--"}
+                  </span>
+                  <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "var(--text-muted)", minWidth: 72 }}>
+                    {c.complaint_id}
+                  </span>
+                  <span style={{
+                    fontSize: 9, padding: "2px 6px", borderRadius: 3, fontWeight: 600,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    background: `${fraudColor[c.fraud_type] || '#525866'}15`,
+                    color: fraudColor[c.fraud_type] || "var(--text-muted)",
+                    minWidth: 90, textAlign: "center",
+                  }}>
+                    {c.fraud_type?.replace(/_/g, " ")}
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--red)", fontFamily: "'JetBrains Mono', monospace", minWidth: 70, textAlign: "right" }}>
+                    ₹{Number(c.amount).toLocaleString("en-IN")}
+                  </span>
+                  <span style={{ fontSize: 10, color: "var(--text-secondary)", flex: 1 }}>
+                    {c.victim_city}, {c.victim_state}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* ─── Section 2: Battlefield ─── */}
       <motion.div

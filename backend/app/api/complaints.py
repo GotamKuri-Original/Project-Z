@@ -55,6 +55,14 @@ def get_complaint(complaint_id: str):
     return row.iloc[0].to_dict()
 
 
+@router.get("/complaints-recent")
+def get_recent_complaints(limit: int = Query(10, le=50)):
+    """Get the most recent complaints for the live threat feed."""
+    df = load_complaints()
+    df = df.sort_values("timestamp", ascending=False).head(limit)
+    return df[["complaint_id", "timestamp", "fraud_type", "amount", "victim_city", "victim_state"]].to_dict(orient="records")
+
+
 @router.get("/atms")
 def get_atms(city: str = None, limit: int = Query(500, le=5000)):
     """Get ATM locations."""

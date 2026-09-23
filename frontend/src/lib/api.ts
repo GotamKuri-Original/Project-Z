@@ -19,6 +19,11 @@ export async function getComplaint(id: string) {
   return res.data;
 }
 
+export async function getRecentComplaints(limit = 10) {
+  const res = await api.get("/complaints-recent", { params: { limit } });
+  return res.data;
+}
+
 export async function getATMs(city?: string) {
   const res = await api.get("/atms", { params: { city, limit: 5000 } });
   return res.data;
