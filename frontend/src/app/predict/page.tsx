@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { predict } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface PredictionResponse {
   prediction: {
@@ -69,6 +70,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 export default function PredictPage() {
+  const router = useRouter();
   const [form, setForm] = useState({
     fraud_type: "UPI_FRAUD", amount: 150000, victim_city: "Delhi",
     last_mule_city: "Mathura", mule_chain_length: 3,
@@ -76,18 +78,23 @@ export default function PredictPage() {
   });
   const [result, setResult] = useState<PredictionResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setShowResult(false);
+    setError(false);
     try {
       const cityData = CITIES.find((c) => c.city === form.victim_city);
       const res = await predict({ ...form, victim_state: cityData?.state || "Delhi" });
       setResult(res);
       setTimeout(() => setShowResult(true), 100);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      setError(true);
+    }
     setLoading(false);
   };
 
@@ -229,9 +236,9 @@ export default function PredictPage() {
                       fontWeight: 700, border: "none", cursor: "pointer", whiteSpace: "nowrap",
                       textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace",
                     }}
-                    onClick={() => alert("✅ ALERT DISPATCHED TO CCTNS\n\nNearest patrol teams notified to monitor predicted ATM zones.")}
+                    onClick={() => router.push(`/map?focusCity=${encodeURIComponent(result.prediction.zones[0].city)}&mule=${encodeURIComponent(form.last_mule_city)}`)}
                   >
-                    DISPATCH
+                    VIEW ON MAP
                   </button>
                 </div>
 
@@ -358,6 +365,18 @@ export default function PredictPage() {
                     </div>
                   </div>
                 )}
+              </motion.div>
+            ) : error ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="glass-card"
+                style={{ padding: "60px 32px", textAlign: "center" }}
+              >
+                <p style={{ fontSize: 16, color: "var(--red)", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>⚠️ CONNECTION FAILED</p>
+                <p style={{ color: "var(--text-muted)", marginTop: 8, fontSize: 13 }}>Prediction Engine is offline. Start the backend server.</p>
               </motion.div>
             ) : (
               <motion.div

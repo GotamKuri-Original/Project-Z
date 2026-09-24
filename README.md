@@ -27,21 +27,29 @@ An AI-powered platform that predicts WHERE cybercriminals will withdraw stolen m
 
 ## Setup
 
-### Backend
+### 1. Automated Backend Setup (Recommended)
+Run the automated setup script. This will create a secure Python 3.12 environment, install dependencies, generate the synthetic crime database, and train the XGBoost model.
+Double-click `setup.bat` or run:
 ```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate   # Windows
-pip install -r requirements.txt
-python -m app.main
+.\setup.bat
 ```
 
-### Frontend
+### 2. Start the Backend
+```bash
+cd backend
+venv\Scripts\activate
+python -m app.main
+```
+*(Runs on http://localhost:8000)*
+
+### 3. Start the Frontend
+Open a **new** terminal window:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+*(Runs on http://localhost:3000)*
 
 ## Team CTRL Z
 
