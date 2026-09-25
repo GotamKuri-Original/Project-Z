@@ -49,7 +49,8 @@ export default function NetworkPage() {
           smooth: { type: "continuous" },
         })));
 
-        new Network(containerRef.current!, { nodes: nodes as any, edges: edges as any }, {
+        if (!containerRef.current) return;
+        const network = new Network(containerRef.current, { nodes: nodes as any, edges: edges as any }, {
           physics: { 
             solver: "forceAtlas2Based",
             forceAtlas2Based: { gravitationalConstant: -120, centralGravity: 0.015, springLength: 100, springConstant: 0.08 },

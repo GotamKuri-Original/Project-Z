@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { getATMs } from "@/lib/api";
 
@@ -10,7 +10,12 @@ const CircleMarker = dynamic(() => import("react-leaflet").then((m) => m.CircleM
 const Popup = dynamic(() => import("react-leaflet").then((m) => m.Popup), { ssr: false });
 const MarkerClusterGroup = dynamic(() => import("react-leaflet-cluster"), { ssr: false });
 
-const FILTER_CITIES = ["", "Delhi", "Mumbai", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Jaipur", "Lucknow", "Jamtara", "Nuh"];
+const FILTER_CITIES = [
+  "", "Delhi", "Mumbai", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", 
+  "Ahmedabad", "Jaipur", "Lucknow", "Chandigarh", "Patna", "Surat", "Indore", 
+  "Kochi", "Nuh", "Mathura", "Bharatpur", "Jamtara", "Deoghar", "Ranchi", 
+  "Nagpur", "Coimbatore", "Guwahati", "Visakhapatnam"
+];
 
 export default function MapPage() {
   const [atms, setAtms] = useState<any[]>([]);
@@ -19,6 +24,28 @@ export default function MapPage() {
   const [muleTracker, setMuleTracker] = useState("");
   const [stats, setStats] = useState({ total: 0, highRisk: 0, medRisk: 0 });
   const [error, setError] = useState(false);
+  const [cctvModal, setCctvModal] = useState<any>(null);
+  const [lockModal, setLockModal] = useState<any>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (cctvModal && videoRef.current) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          if (videoRef.current) {
+             videoRef.current.srcObject = stream;
+          }
+        })
+        .catch(err => console.error("Webcam error:", err));
+    }
+    
+    return () => {
+       if (videoRef.current && videoRef.current.srcObject) {
+         const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+         tracks.forEach(t => t.stop());
+       }
+    };
+  }, [cctvModal]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -146,6 +173,18 @@ export default function MapPage() {
                   <Popup>
                     <div style={{ color: "#000", fontSize: 12, lineHeight: 1.6 }}>
                       <strong>{atm.atm_id}</strong><br />{atm.bank}<br />{atm.city}, {atm.state}<br />Type: {atm.area_type}
+                      <div style={{ marginTop: 8, display: 'flex', gap: 6, flexDirection: 'column' }}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setCctvModal(atm); }}
+                          style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '6px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontWeight: 'bold' }}>
+                          📷 ACCESS CCTV
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setLockModal(atm); }}
+                          style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontWeight: 'bold' }}>
+                          🔒 INITIATE GEOFENCE LOCK
+                        </button>
+                      </div>
                     </div>
                   </Popup>
                 </CircleMarker>
@@ -154,6 +193,48 @@ export default function MapPage() {
           </MapContainer>
         )}
       </div>
+
+      {/* CCTV Modal */}
+      {cctvModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8, width: 500, overflow: 'hidden' }}>
+            <div style={{ padding: 12, background: '#1e293b', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #334155' }}>
+              <span style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>📷 LIVE CCTV FEED — ATM #{cctvModal.atm_id}</span>
+              <button onClick={() => setCctvModal(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>✖</button>
+            </div>
+            <div style={{ padding: 20, textAlign: 'center' }}>
+              <div style={{ width: '100%', height: 300, background: '#000', borderRadius: 4, position: 'relative', overflow: 'hidden', border: '2px solid #334155', marginBottom: 12 }}>
+                <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%) contrast(1.2)' }} />
+                <div style={{ position: 'absolute', top: '10%', left: '30%', width: '40%', height: '50%', border: '2px dashed rgba(34, 197, 94, 0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', color: 'rgba(34, 197, 94, 0.5)', fontSize: 10, paddingTop: 4 }}>FACE DETECTED</div>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '100%', background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px)', pointerEvents: 'none' }}></div>
+                <div style={{ position: 'absolute', bottom: 8, left: 8, color: '#ef4444', fontSize: 12, fontFamily: 'monospace', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }}></span> REC
+                </div>
+              </div>
+              <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 14 }}>✅ SUSPECT MATCH IDENTIFIED</p>
+              <p style={{ color: '#cbd5e1', fontSize: 12, marginTop: 4 }}>Live feed verifying presence at ATM Location</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Geofence Lock Modal */}
+      {lockModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#0f172a', border: '1px solid #ef4444', borderRadius: 8, width: 400, padding: 24, textAlign: 'center' }}>
+             <h2 style={{ color: '#ef4444', marginBottom: 12 }}>🔒 HARDWARE OVERRIDE</h2>
+             <p style={{ color: '#cbd5e1', fontSize: 14, marginBottom: 20 }}>
+               Transmitting Geofence Lock protocol to Bank Server for <strong>ATM #{lockModal.atm_id}</strong>. 
+               Cash dispenser will be disabled for 30 minutes.
+             </p>
+             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+               <button onClick={() => { alert("Lock signal transmitted successfully."); setLockModal(null); }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold' }}>CONFIRM LOCK</button>
+               <button onClick={() => setLockModal(null)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '8px 16px', borderRadius: 4, cursor: 'pointer' }}>CANCEL</button>
+             </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

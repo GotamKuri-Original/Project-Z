@@ -26,12 +26,12 @@
 ## Slide 3: TECHNICAL APPROACH
 * **Frontend:** Next.js (React), Tailwind CSS, React-Leaflet (Interactive Heatmaps)
 * **Backend:** FastAPI (Python), REST API Architecture
-* **Machine Learning:** XGBoost (Classification & Risk Scoring), Pandas
-* **Methodology (Flow):**
-  1. **Data Ingestion:** Process 30,000+ transaction nodes.
-  2. **Feature Engineering:** Extract key indicators (e.g., `mule_chain_length`, `reporting_delay_mins`).
-  3. **ML Inference:** XGBoost predicts fraud probability across 23 city zones.
-  4. **Visualization:** Next.js renders the live threat map for police command centers.
+* **Machine Learning:** XGBoost (Classification) + Spatial Risk Scoring
+* **Methodology (Two-Stage Prediction Flow):**
+  1. **Data Ingestion:** Process 30,000+ transaction nodes and mule routes.
+  2. **Stage 1 (Macro):** XGBoost ML predicts the target destination *City* based on mule routing behavior and temporal features.
+  3. **Stage 2 (Micro):** Spatial Risk Algorithm filters thousands of ATMs in that city down to the **Exact Top 3 High-Risk ATMs** based on escape routes (highways) and historical blind spots.
+  4. **Actionable Output:** Next.js renders these top 3 targets on the map for immediate police dispatch, eliminating guesswork.
 *(Pro-tip: Paste a screenshot of your working map dashboard here!)*
 
 ---

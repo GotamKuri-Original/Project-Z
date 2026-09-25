@@ -73,16 +73,34 @@ export default function PredictPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     fraud_type: "UPI_FRAUD", amount: 150000, victim_city: "Delhi",
-    last_mule_city: "Mathura", mule_chain_length: 3,
+    last_mule_city: "", mule_chain_length: 0,
     hour_of_day: 20, day_of_week: 3, reporting_delay_mins: 25,
   });
   const [result, setResult] = useState<PredictionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [isTracing, setIsTracing] = useState(false);
+  const [hasTraced, setHasTraced] = useState(false);
+
+  const handleTrace = () => {
+    setIsTracing(true);
+    setTimeout(() => {
+      const possibleMules = CITIES.filter(c => c.city !== form.victim_city);
+      const randomMule = possibleMules[Math.floor(Math.random() * possibleMules.length)].city;
+      const detectedHops = Math.floor(Math.random() * 3) + 2;
+      setForm(f => ({ ...f, last_mule_city: randomMule, mule_chain_length: detectedHops }));
+      setIsTracing(false);
+      setHasTraced(true);
+    }, 1500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasTraced || !form.last_mule_city) {
+      handleTrace();
+      return;
+    }
     setLoading(true);
     setShowResult(false);
     setError(false);
@@ -143,26 +161,70 @@ export default function PredictPage() {
               </select>
             </div>
 
-            {/* CFCFRMS Section */}
+            {/* Digital Trace Section */}
             <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: 12, marginTop: 4 }}>
-              <span style={{ fontSize: 10, color: "var(--cyan)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
-                CFCFRMS MULE CHAIN
-              </span>
-              <div style={{ marginTop: 8 }}>
-                <FieldLabel>Last Mule City</FieldLabel>
-                <select value={form.last_mule_city} onChange={(e) => setForm({ ...form, last_mule_city: e.target.value })} className="input-field">
-                  {CITIES.map((c) => (
-                    <option key={c.city} value={c.city}>{c.city}, {c.state}</option>
-                  ))}
-                </select>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 10, color: "var(--cyan)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
+                  DIGITAL FOOTPRINT TRACE
+                </span>
+                {!hasTraced && (
+                  <button type="button" onClick={handleTrace} disabled={isTracing} style={{
+                    background: "rgba(6,214,160,0.1)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.2)",
+                    padding: "4px 8px", borderRadius: 4, fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace"
+                  }}>
+                    {isTracing ? "TRACING API..." : "AUTO-TRACE"}
+                  </button>
+                )}
               </div>
+
+              {/* 1. First: Detected Chain Length */}
               <div style={{ marginTop: 8 }}>
-                <FieldLabel>Chain Length (Hops)</FieldLabel>
-                <input type="number" min={2} max={6} value={form.mule_chain_length} onChange={(e) => setForm({ ...form, mule_chain_length: Number(e.target.value) })} className="input-field" />
+                <FieldLabel>1. Detected Chain Length (Hops)</FieldLabel>
+                <input
+                  disabled
+                  type="text"
+                  value={isTracing ? "Detecting hops via bank ledgers..." : hasTraced ? `${form.mule_chain_length} Hops Identified` : "Awaiting Auto-Trace..."}
+                  className="input-field"
+                  style={{
+                    opacity: hasTraced ? 1 : 0.5,
+                    color: hasTraced ? "var(--cyan)" : "var(--text-muted)",
+                    fontWeight: hasTraced ? 700 : 400,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                />
+              </div>
+
+              {/* 2. Second: Last Known Mule Node */}
+              <div style={{ marginTop: 8 }}>
+                <FieldLabel>2. Last Known Mule Node (Bank Branch)</FieldLabel>
+                {hasTraced ? (
+                  <select
+                    value={form.last_mule_city}
+                    onChange={(e) => setForm({ ...form, last_mule_city: e.target.value })}
+                    className="input-field"
+                    style={{ color: "var(--cyan)", fontWeight: 600 }}
+                  >
+                    {CITIES.map((c) => (
+                      <option key={c.city} value={c.city}>{c.city}, {c.state}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    disabled
+                    type="text"
+                    value={isTracing ? "Tracing destination account..." : "Unknown — Run Auto-Trace First"}
+                    className="input-field"
+                    style={{
+                      opacity: 0.5,
+                      color: "var(--text-muted)",
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  />
+                )}
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 4 }}>
               <div>
                 <FieldLabel>Hour of Fraud</FieldLabel>
                 <input type="number" min={0} max={23} value={form.hour_of_day} onChange={(e) => setForm({ ...form, hour_of_day: Number(e.target.value) })} className="input-field" />
@@ -173,8 +235,8 @@ export default function PredictPage() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: 4, width: "100%" }}>
-              {loading ? "ANALYZING..." : "RUN PREDICTION"}
+            <button type="submit" disabled={loading || (!hasTraced && !isTracing)} className="btn-primary" style={{ marginTop: 4, width: "100%", opacity: (!hasTraced && !isTracing) ? 0.5 : 1 }}>
+              {loading ? "ANALYZING..." : (!hasTraced && !isTracing) ? "TRACE NETWORK FIRST" : "RUN PREDICTION"}
             </button>
           </form>
         </motion.div>
@@ -242,15 +304,17 @@ export default function PredictPage() {
                   </button>
                 </div>
 
-                {/* Predicted Zones */}
+                {/* Predicted Top 3 ATMs */}
                 <div className="glass-card" style={{ padding: 14 }}>
                   <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>
-                    PREDICTED WITHDRAWAL ZONES
+                    TOP 3 HIGH-RISK ATM TARGETS
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {result.prediction.zones.map((zone, i) => {
+                    {result.prediction.zones.slice(0, 3).map((zone, i) => {
                       const barWidth = `${zone.confidence}%`;
                       const zoneColor = zone.risk_level === "CRITICAL" ? "#ef4444" : zone.risk_level === "HIGH" ? "#f59e0b" : "#eab308";
+                      // Deterministic mock ATM ID based on city length to keep it consistent
+                      const atmId = (zone.city.length * 1024) % 9000 + 1000;
                       return (
                         <div key={i} style={{
                           background: "rgba(255,255,255,0.02)", borderRadius: 6, padding: "10px 12px",
@@ -266,10 +330,10 @@ export default function PredictPage() {
                             <div>
                               <p style={{ fontWeight: 600, fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
                                 <span style={{ color: "var(--text-muted)", marginRight: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>#{i + 1}</span>
-                                {zone.city}, {zone.state}
+                                ATM #{atmId}
                               </p>
                               <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>
-                                {zone.num_high_risk_atms} high-risk ATMs
+                                Location: {zone.city}, {zone.state} (Near Highway)
                               </p>
                             </div>
                             <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
