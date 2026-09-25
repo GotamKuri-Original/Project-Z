@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { getDashboard, getRecentComplaints } from "@/lib/api";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid,
@@ -10,12 +10,12 @@ import {
 
 const COLORS = ["#06d6a0", "#38bdf8", "#a78bfa", "#f472b6", "#f59e0b", "#eab308"];
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.06 } }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 16 },
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 18 } }
 };
@@ -61,7 +61,7 @@ function MetricCard({ label, value, sub, color }: {
   );
 }
 
-const ChartTooltip = ({ active, payload, label }: any) => {
+const ChartTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
@@ -74,12 +74,37 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+interface DashboardData {
+  kpis: {
+    total_complaints: number;
+    total_amount_at_risk: number;
+    total_suspects: number;
+    active_gangs: number;
+    avg_amount: number;
+    total_withdrawals: number;
+    avg_reporting_delay_mins: number;
+  };
+  fraud_type_breakdown: Record<string, number>;
+  top_victim_cities: Record<string, number>;
+  complaints_by_hour: Record<string, number>;
+}
+
+interface Complaint {
+  timestamp: string;
+  complaint_id: string;
+  fraud_type: string;
+  amount: number;
+  victim_city: string;
+  victim_state: string;
+}
+
 export default function DashboardPage() {
-  const [data, setData] = useState<any>(null);
-  const [recentComplaints, setRecentComplaints] = useState<any[]>([]);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [recentComplaints, setRecentComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initial fetch
     Promise.all([
       getDashboard(),
       getRecentComplaints(10),
@@ -87,6 +112,15 @@ export default function DashboardPage() {
       setData(dashData);
       setRecentComplaints(recent);
     }).catch(console.error).finally(() => setLoading(false));
+
+    // Auto-refresh live threat feed every 10 seconds
+    const interval = setInterval(() => {
+      getRecentComplaints(10)
+        .then(setRecentComplaints)
+        .catch(console.error);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -115,6 +149,18 @@ export default function DashboardPage() {
     name: name.replace(/_/g, " "), value: value as number,
   }));
 
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    if (percent < 0.05) return null; // Don't show label for very small slices
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+    return (
+      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={10} fontWeight={700}>
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
   const cityBarData = Object.entries(top_victim_cities).slice(0, 8).map(([city, count]) => ({
     city, count: count as number,
   }));
@@ -135,7 +181,7 @@ export default function DashboardPage() {
         <MetricCard label="Active Complaints" value={kpis.total_complaints} color="cyan" />
         <MetricCard label="Money at Risk" value={`₹${(kpis.total_amount_at_risk / 10000000).toFixed(1)}Cr`} sub="Aggregate fraud value" color="red" />
         <MetricCard label="Suspects Tracked" value={kpis.total_suspects} sub={`${kpis.active_gangs} syndicates`} color="orange" />
-        <MetricCard label="Model F1-Score" value="73.2%" sub="XGBoost prediction" color="green" />
+        <MetricCard label="Model F1-Score" value="66.5%" sub="XGBoost prediction" color="green" />
       </motion.div>
 
       <motion.div
@@ -146,7 +192,7 @@ export default function DashboardPage() {
         <MetricCard label="Avg. Loss" value={`₹${(kpis.avg_amount / 1000).toFixed(0)}K`} color="blue" />
         <MetricCard label="ATM Withdrawals" value={kpis.total_withdrawals} sub="Linked to cases" color="purple" />
         <MetricCard label="Report Delay" value={`${kpis.avg_reporting_delay_mins}m`} sub="Avg. victim response" color="yellow" />
-        <MetricCard label="Inference" value="1.2s" sub="Prediction latency" color="cyan" />
+        <MetricCard label="Inference" value="<50ms" sub="Prediction latency" color="cyan" />
       </motion.div>
 
       {/* ─── Live Threat Feed ─── */}
@@ -164,7 +210,7 @@ export default function DashboardPage() {
             <span className="live-pulse" style={{ fontSize: 10, color: "var(--green)", fontFamily: "'JetBrains Mono', monospace" }}>STREAMING</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {recentComplaints.map((c: any, i: number) => {
+            {recentComplaints.map((c: Complaint, i: number) => {
               const fraudColor: Record<string, string> = {
                 UPI_FRAUD: "#ef4444", OTP_PHISHING: "#f59e0b", KYC_FRAUD: "#a78bfa",
                 INVESTMENT_SCAM: "#f472b6", SEXTORTION: "#ef4444", COURIER_SCAM: "#eab308",
@@ -236,7 +282,7 @@ export default function DashboardPage() {
           </p>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie data={fraudPieData} innerRadius={60} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none">
+              <Pie data={fraudPieData} innerRadius={60} outerRadius={85} paddingAngle={3} dataKey="value" stroke="none" labelLine={false} label={renderCustomizedLabel}>
                 {fraudPieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
               </Pie>
               <Tooltip content={<ChartTooltip />} />

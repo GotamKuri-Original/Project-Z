@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Presentation Guide</title>
+    
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+        color: #333;
+        background-color: #f9f9f9;
+    }
+    .markdown-body {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 { border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-top: 24px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 16px; font-size: 14px; }
+    th, td { border: 1px solid #dfe2e5; padding: 8px 13px; text-align: left; }
+    th { background-color: #f6f8fa; }
+    blockquote { border-left: 4px solid #dfe2e5; margin: 0 0 16px 0; padding: 0 15px; color: #6a737d; }
+    code { background-color: rgba(27,31,35,0.05); padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; }
+    pre { background-color: #f6f8fa; padding: 16px; overflow: auto; border-radius: 3px; }
+    pre code { background-color: transparent; padding: 0; }
+    img { max-width: 100%; box-sizing: content-box; }
+</style>
+
+</head>
+<body>
+    <div class="markdown-body">
+        <h1>🎤 Team CTRL Z — Final Presentation Script</h1>
+<p><em>Matched to actual exported Gamma PDF slides</em></p>
+<hr>
+<h2>Team &amp; Slide Assignments</h2>
+<table>
+<thead>
+<tr>
+<th>Person</th>
+<th>Role</th>
+<th>Presents</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Harsh</strong></td>
+<td>Project Manager</td>
+<td>Slide 1 (Title + Intro) → Slide 5 (Feasibility left side)</td>
+<td>~2 min</td>
+</tr>
+<tr>
+<td><strong>Gotam</strong></td>
+<td>Backend &amp; ML</td>
+<td>Slide 2 (Problem &amp; Solution) → Slide 4 (Technical Flow)</td>
+<td>~4.5 min ⭐</td>
+</tr>
+<tr>
+<td><strong>Ashmita</strong></td>
+<td>Graphics/UI-UX</td>
+<td>Slide 3 (What Makes Us Different) → Slide 5 (Impact right side)</td>
+<td>~3 min ⭐</td>
+</tr>
+<tr>
+<td><strong>Mohit</strong></td>
+<td>Frontend + Python</td>
+<td>Slide 3 (Tech Stack cards only)</td>
+<td>~1 min</td>
+</tr>
+<tr>
+<td><strong>Vansh</strong></td>
+<td>Researcher</td>
+<td>Slide 6 (References)</td>
+<td>~1 min</td>
+</tr>
+<tr>
+<td><strong>Nitin</strong></td>
+<td>Frontend</td>
+<td>Live demo support + backs up Q&amp;A</td>
+<td>~30 sec</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>SLIDE 1 — Title Page</h2>
+<p><strong>Speaker: HARSH</strong></p>
+<p><em>What&#39;s on screen: Shield + ATM image on left. &quot;SMART INDIA HACKATHON · SIH26184&quot; badge. Title. Theme, PS Category, Team Name.</em></p>
+<blockquote>
+<p>&quot;Good morning/afternoon judges. We are Team CTRL Z, presenting Problem Statement SIH26184 — Predictive Cybercrime Analytics and ATM Fraud Hotspot Detection, under Smart Automation and Security &amp; Surveillance.</p>
+<p>Quick introductions — I&#39;m Harsh, Project Manager. With me are Gotam our Backend &amp; ML Engineer, Ashmita our UI/UX Designer, Mohit and Nitin our Frontend Developers, and Vansh our Researcher.</p>
+<p>Gotam will walk you through the problem we&#39;re solving.&quot;</p>
+</blockquote>
+<p><strong>Handoff → Gotam</strong></p>
+<hr>
+<h2>SLIDE 2 — The Problem &amp; Our Solution — CrimeShield AI</h2>
+<p><strong>Speaker: GOTAM</strong></p>
+<p><em>What&#39;s on screen: Blue box on left = &quot;🔴 The Problem&quot; with 4 bullets. White area on right = &quot;🟢 Our Solution: CrimeShield AI&quot; with 3 numbered steps + Result line.</em></p>
+<h4>Point to the BLUE BOX (left side):</h4>
+<blockquote>
+<p>&quot;Look at the left side — this is what&#39;s happening in India right now. A victim gets scammed. The stolen money doesn&#39;t stay in one account — it gets laundered through 4 to 8 mule accounts in minutes. Then a cash runner walks into a random ATM and withdraws the physical cash.</p>
+<p>That&#39;s the moment the digital trail is permanently broken. The money is gone forever.</p>
+<p>And look at this gap — manual tracing takes 2 to 24 hours. An ATM withdrawal takes 15 minutes. The system is always too late.&quot;</p>
+</blockquote>
+<h4>Point to the RIGHT SIDE:</h4>
+<blockquote>
+<p>&quot;This is our solution — CrimeShield AI. Instead of chasing money digitally, we predict which exact ATM the criminal will go to — before they get there.</p>
+<p>Three steps:</p>
+<ul>
+<li>Step 1, Auto-Trace: complaint comes in, our system auto-detects the mule chain length via banking APIs.</li>
+<li>Step 2, AI Prediction: our XGBoost model predicts the destination city.</li>
+<li>Step 3, Pinpoint ATMs: our spatial engine ranks local ATMs and outputs the Top 3 high-risk ATMs with GPS coordinates.</li>
+</ul>
+<p>Result — police intercept the cash runner. Money recovered. Criminal caught.</p>
+<p>Ashmita will show you what makes this fundamentally different from anything that exists.&quot;</p>
+</blockquote>
+<p><strong>Handoff → Ashmita</strong></p>
+<hr>
+<h2>SLIDE 3 — What Makes Us Different</h2>
+<p><strong>Speaker: ASHMITA</strong> (comparison table) → <strong>MOHIT</strong> (tech stack)</p>
+<p><em>What&#39;s on screen: &quot;💡 Innovation &amp; Uniqueness&quot; heading. 4-row comparison table (Traditional vs CrimeShield AI). Below: &quot;🛠️ Tech Stack&quot; with 5 cards (ML, Backend, Frontend, Maps, Runs on).</em></p>
+<h4>Ashmita — Point to the COMPARISON TABLE:</h4>
+<blockquote>
+<p>&quot;This table tells the whole story.</p>
+<p><em>(point to row 1)</em> Traditional systems give broad city-level heatmaps. With 9,000 ATMs in a city like Delhi, that&#39;s useless. We give exact ATM-level targeting with street coordinates.</p>
+<p><em>(point to row 2)</em> Manual bank statement analysis? Officers spending hours on Excel sheets. We automate mule chain discovery in seconds.</p>
+<p><em>(point to row 3)</em> Most AI is a black box. Ours uses Explainable AI — it tells the officer exactly why an ATM was flagged. This is also critical for court evidence.</p>
+<p><em>(point to row 4)</em> And the big one — traditional policing is reactive. We are proactive. We predict before the cash is withdrawn.</p>
+<p>Mohit will cover our tech stack.&quot;</p>
+</blockquote>
+<h4>Mohit — Point to the 5 TECH STACK CARDS:</h4>
+<blockquote>
+<p>&quot;Our ML runs on Python with XGBoost and Scikit-Learn. Backend is FastAPI — a high-performance async API. Frontend is Next.js, React 19, TypeScript. For maps, we use Leaflet with clustering for over 30,000 ATMs. And this all runs on standard CPU servers — no expensive GPUs.</p>
+<p>Gotam will explain how the full pipeline works.&quot;</p>
+</blockquote>
+<p><strong>Handoff → Gotam</strong></p>
+<hr>
+<h2>SLIDE 4 — How It Works — Technical Flow</h2>
+<p><strong>Speaker: GOTAM</strong></p>
+<p><em>What&#39;s on screen: &quot;⚡ 4-Step Pipeline&quot; — a 2x2 grid showing Steps 1-4. Below: &quot;🔗 Integration Points&quot; — 3 cards (Input, Output, Infrastructure).</em></p>
+<h4>Point to the 4-STEP GRID:</h4>
+<blockquote>
+<p>&quot;Here&#39;s the exact pipeline.</p>
+<p><em>(point to box 1)</em> Step 1, Ingest — victim reports to 1930 or CFCFRMS. Our API auto-fetches how many mule hops the money went through and the last known node.</p>
+<p><em>(point to box 2)</em> Step 2, Predict City — this data goes into our XGBoost classifier which evaluates hour, latency, amount, and chain length. It outputs the destination corridor — for example, Mathura, UP.</p>
+<p><em>(point to box 3)</em> Step 3, Predict ATM — now we know the city. Our spatial engine filters every local ATM by highway proximity, CCTV blind spots, and historical cash-out velocity. Output: the exact Top 3 ATMs.</p>
+<p><em>(point to box 4)</em> Step 4, Dispatch — an automated alert goes to the nearest patrol van with GPS route, CCTV feed, and a geofence lock.&quot;</p>
+</blockquote>
+<h4>Point to the INTEGRATION POINTS cards:</h4>
+<blockquote>
+<p>&quot;And critically — look at these three cards. Input comes from NCRP and CFCFRMS — systems that already exist. Output goes to CCTNS terminals — already in every police station. Infrastructure runs on NIC Cloud with zero additional hardware cost. This is not a standalone tool — it plugs directly into existing government systems.</p>
+<p>Harsh will cover feasibility and Ashmita will cover the real-world impact.&quot;</p>
+</blockquote>
+<p><strong>Handoff → Harsh then Ashmita</strong></p>
+<hr>
+<h2>SLIDE 5 — Feasibility, Challenges &amp; Impact</h2>
+<p><strong>Speaker: HARSH</strong> (left side) → <strong>ASHMITA</strong> (right blue box)</p>
+<p><em>What&#39;s on screen: Left = &quot;✅ Why This Is Feasible&quot; (3 bullets) + &quot;⚠️ Key Challenges &amp; Our Solutions&quot; (3 bullets). Right = blue card &quot;🎯 Real-World Impact&quot; (4 bullets with emojis).</em></p>
+<h4>Harsh — Point to the LEFT SIDE:</h4>
+<blockquote>
+<p>&quot;Three reasons this is immediately deployable.</p>
+<p>First — it plugs directly into existing MHA infrastructure. NCRP for input, CCTNS for output. No new systems needed.</p>
+<p>Second — built entirely on open-source. Zero licensing costs.</p>
+<p>Third — XGBoost inference runs in under 50 milliseconds on standard CPU.</p>
+<p>We&#39;ve also anticipated the risks:</p>
+<ul>
+<li>Reporting delay? Our model explicitly weighs this — short delay targets local ATMs, long delay shifts to transit hubs.</li>
+<li>Data privacy? Everything is SHA-256 hashed. No personal data stored.</li>
+<li>Criminals change routes? We built continuous retraining from CCTNS arrest logs.</li>
+</ul>
+<p>Ashmita will cover the impact.&quot;</p>
+</blockquote>
+<h4>Ashmita — Point to the BLUE BOX (right side):</h4>
+<blockquote>
+<p>&quot;The real-world impact is powerful.</p>
+<p><em>(point to each bullet)</em> </p>
+<ul>
+<li>Direct fund recovery — catch the cash runner at the ATM and you recover 100% of the stolen money.</li>
+<li>Bust the syndicate — a physical arrest at an ATM yields cloned cards, burner phones, and contact logs leading to kingpins.</li>
+<li>Save hundreds of hours — automated cross-jurisdictional mule account correlation.</li>
+<li>And deterrence — when arrest risk at ATMs goes up, recruitment into cyber gangs goes down.</li>
+</ul>
+<p>Vansh will close with our research references.&quot;</p>
+</blockquote>
+<p><strong>Handoff → Vansh</strong></p>
+<hr>
+<h2>SLIDE 6 — Research &amp; References</h2>
+<p><strong>Speaker: VANSH</strong></p>
+<p><em>What&#39;s on screen: Numbered list 1-6 with research sources.</em></p>
+<blockquote>
+<p>&quot;Our solution is grounded in:</p>
+<ul>
+<li>NCRB&#39;s Crime in India reports for cybercrime distribution patterns</li>
+<li>I4C operational guidelines for CFCFRMS</li>
+<li>RBI and NPCI data on ATM withdrawal caps and mule layering</li>
+<li>The XGBoost paper by Chen and Guestrin from ACM SIGKDD 2016</li>
+<li>Spatial crime analytics research on predictive policing</li>
+<li>And a fully working live prototype on our GitHub.</li>
+</ul>
+</blockquote>
+<h4>Closing — HARSH:</h4>
+<blockquote>
+<p>&quot;Thank you judges. We have a fully functional live prototype ready for demo. We&#39;re happy to take your questions.&quot;</p>
+</blockquote>
+<hr>
+<h2>🔴 Q&amp;A — Who Answers What</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Who</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&quot;How does the ML model work? Features? Accuracy?&quot;</td>
+<td><strong>Gotam</strong></td>
+</tr>
+<tr>
+<td>&quot;Show us the app / demo&quot;</td>
+<td><strong>Nitin</strong> opens laptop, <strong>Mohit</strong> narrates</td>
+</tr>
+<tr>
+<td>&quot;Why this comparison table? How are you better?&quot;</td>
+<td><strong>Ashmita</strong></td>
+</tr>
+<tr>
+<td>&quot;What research? Why XGBoost over other models?&quot;</td>
+<td><strong>Vansh</strong> (Gotam backs up)</td>
+</tr>
+<tr>
+<td>&quot;Is this feasible? Cost? Timeline? Scalability?&quot;</td>
+<td><strong>Harsh</strong></td>
+</tr>
+<tr>
+<td>&quot;How does it integrate with police systems?&quot;</td>
+<td><strong>Gotam</strong></td>
+</tr>
+<tr>
+<td>&quot;UI/UX design decisions?&quot;</td>
+<td><strong>Ashmita</strong></td>
+</tr>
+<tr>
+<td>&quot;What about privacy/legal?&quot;</td>
+<td><strong>Gotam + Harsh</strong></td>
+</tr>
+<tr>
+<td>&quot;What if criminal uses POS not ATM?&quot;</td>
+<td><strong>Vansh</strong>: &quot;Our focus is ATM cash-outs — the most common endpoint. Architecture is extensible to POS.&quot;</td>
+</tr>
+<tr>
+<td>&quot;Model accuracy numbers?&quot;</td>
+<td><strong>Gotam</strong>: &quot;Trained on synthetic data from NCRB patterns. Real deployment retrains on CFCFRMS data.&quot;</td>
+</tr>
+<tr>
+<td>&quot;How different from I4C?&quot;</td>
+<td><strong>Gotam</strong>: &quot;I4C freezes bank accounts (digital side). We predict physical cash-out locations. Complementary, not competing.&quot;</td>
+</tr>
+<tr>
+<td>&quot;Scale to all India?&quot;</td>
+<td><strong>Harsh</strong>: &quot;Already indexed 30,000+ ATMs across 25+ cities. Inference under 50ms. Scaling is a data problem, not compute.&quot;</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>⚡ Practice Tips</h2>
+<ol>
+<li><strong>Gotam &amp; Ashmita</strong> — you two carry 70% of the talk. Practice your parts 3-4 times each.</li>
+<li><strong>Point at the screen</strong> — reference the exact visuals (blue box, table rows, pipeline grid, cards). Don&#39;t just talk into the air.</li>
+<li><strong>Smooth handoffs</strong> — always say the next person&#39;s name: &quot;Ashmita will show you...&quot;</li>
+<li><strong>Nitin</strong> — keep the laptop ready with CrimeShield AI running at localhost:3000/predict. If judges say &quot;show us&quot;, you open it instantly.</li>
+<li><strong>Don&#39;t read the slides</strong> — they can read. You ADD the story behind it.</li>
+<li><strong>10-minute timer</strong> — practice with one. Going overtime loses marks.</li>
+<li><strong>Confidence &gt; Perfection</strong> — if you forget something, keep moving. Judges value communication.</li>
+</ol>
+
+    </div>
+</body>
+</html>

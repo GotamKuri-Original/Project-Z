@@ -15,7 +15,8 @@ const navItems = [
 function NavIcon({ path, active }: { path: string; active: boolean }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-      stroke={active ? "#06d6a0" : "#525866"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      stroke={active ? "var(--purple)" : "var(--text-muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transition: "stroke 0.3s ease" }}>
       <path d={path} />
     </svg>
   );
@@ -25,28 +26,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
 
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <head>
         <title>CrimeShield AI — Cyber Operations Center</title>
         <meta name="description" content="Predictive Analytics for Cybercrime — Team CTRL Z — SIH 2026" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body>
         <div style={{ display: "flex", minHeight: "100vh", position: "relative", zIndex: 1 }}>
           {/* Ultra-Slim Icon Dock */}
           <aside style={{
-            width: 64, flexShrink: 0, position: "fixed", height: "100vh", zIndex: 50,
+            width: 68, flexShrink: 0, position: "fixed", height: "100vh", zIndex: 50,
             display: "flex", flexDirection: "column", alignItems: "center",
-            background: "#0a0a0f", borderRight: "1px solid rgba(255,255,255,0.06)",
+            background: "var(--bg-secondary)", borderRight: "1px solid var(--border-color)",
           }}>
             {/* Logo Mark */}
             <div style={{
-              width: 36, height: 36, borderRadius: 10, marginTop: 16, marginBottom: 20,
-              background: "linear-gradient(135deg, #06d6a0, #38bdf8)",
+              width: 38, height: 38, borderRadius: 10, marginTop: 16, marginBottom: 20,
+              background: "linear-gradient(135deg, var(--violet), var(--blue))",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, fontWeight: 900, color: "#0a0a0f", letterSpacing: -0.5,
+              fontSize: 15, fontWeight: 900, color: "#fff", letterSpacing: -0.5,
+              boxShadow: "0 2px 10px rgba(109, 40, 217, 0.4)"
             }}>
               CS
             </div>
@@ -57,12 +60,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 const isActive = pathname === item.href;
                 return (
                   <Link key={item.href} href={item.href} title={item.label} style={{
-                    width: 40, height: 40, borderRadius: 10,
+                    width: 44, height: 44, borderRadius: 12,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    background: isActive ? "rgba(6,214,160,0.1)" : "transparent",
-                    border: isActive ? "1px solid rgba(6,214,160,0.2)" : "1px solid transparent",
-                    transition: "all 0.15s ease",
+                    background: isActive ? "rgba(139, 92, 246, 0.15)" : "transparent",
+                    border: isActive ? "1px solid rgba(139, 92, 246, 0.3)" : "1px solid transparent",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     textDecoration: "none",
+                    boxShadow: isActive ? "0 4px 12px rgba(139, 92, 246, 0.1)" : "none",
                   }}>
                     <NavIcon path={item.icon} active={isActive} />
                   </Link>
@@ -73,32 +77,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* Bottom Status */}
             <div style={{
               marginBottom: 16, width: 8, height: 8, borderRadius: "50%",
-              background: "#0be881", boxShadow: "0 0 8px rgba(11,232,129,0.5)",
+              background: "var(--green)", boxShadow: "0 0 10px rgba(16,185,129,0.6)",
             }} title="System Online" />
           </aside>
 
           {/* Main Content */}
-          <main style={{ marginLeft: 64, flex: 1, padding: "20px 24px", minHeight: "100vh" }}>
+          <main style={{ marginLeft: 68, flex: 1, padding: "24px 32px", minHeight: "100vh" }}>
             {/* Top Bar */}
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              marginBottom: 20, paddingBottom: 16,
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              marginBottom: 24, paddingBottom: 16,
+              borderBottom: "1px solid var(--border-color)",
             }}>
               <div>
-                <h1 style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.3, color: "#e2e8f0" }}>
+                <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.5, color: "var(--text-primary)" }}>
                   CrimeShield AI
                 </h1>
-                <p style={{ fontSize: 11, color: "#525866", marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
                   SIH26184 • Ministry of Home Affairs • Team CTRL Z
                 </p>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <span style={{
-                  padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 600,
+                  padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
                   fontFamily: "'JetBrains Mono', monospace",
-                  background: "rgba(11,232,129,0.08)", border: "1px solid rgba(11,232,129,0.15)",
-                  color: "#0be881", textTransform: "uppercase", letterSpacing: "0.5px",
+                  background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
+                  color: "var(--green)", textTransform: "uppercase", letterSpacing: "1px",
+                  boxShadow: "0 2px 8px rgba(16,185,129,0.15)"
                 }}>
                   ● LIVE
                 </span>

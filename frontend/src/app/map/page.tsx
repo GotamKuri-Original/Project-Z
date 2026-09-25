@@ -4,11 +4,24 @@ import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { getATMs } from "@/lib/api";
 
+interface ATM {
+  atm_id: string;
+  bank: string;
+  city: string;
+  state: string;
+  area_type: string;
+  lat: number;
+  lng: number;
+  near_state_border: boolean;
+  near_highway: boolean;
+  near_bus_station: boolean;
+}
+
+
 const MapContainer = dynamic(() => import("react-leaflet").then((m) => m.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer), { ssr: false });
 const CircleMarker = dynamic(() => import("react-leaflet").then((m) => m.CircleMarker), { ssr: false });
 const Popup = dynamic(() => import("react-leaflet").then((m) => m.Popup), { ssr: false });
-const MarkerClusterGroup = dynamic(() => import("react-leaflet-cluster"), { ssr: false });
 
 const FILTER_CITIES = [
   "", "Delhi", "Mumbai", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", 
@@ -18,30 +31,31 @@ const FILTER_CITIES = [
 ];
 
 export default function MapPage() {
-  const [atms, setAtms] = useState<any[]>([]);
+  const [atms, setAtms] = useState<ATM[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState("");
   const [muleTracker, setMuleTracker] = useState("");
   const [stats, setStats] = useState({ total: 0, highRisk: 0, medRisk: 0 });
   const [error, setError] = useState(false);
-  const [cctvModal, setCctvModal] = useState<any>(null);
-  const [lockModal, setLockModal] = useState<any>(null);
+  const [cctvModal, setCctvModal] = useState<ATM | null>(null);
+  const [lockModal, setLockModal] = useState<ATM | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (cctvModal && videoRef.current) {
+    const videoElement = videoRef.current;
+    if (cctvModal && videoElement) {
       navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
-          if (videoRef.current) {
-             videoRef.current.srcObject = stream;
+          if (videoElement) {
+             videoElement.srcObject = stream;
           }
         })
         .catch(err => console.error("Webcam error:", err));
     }
     
     return () => {
-       if (videoRef.current && videoRef.current.srcObject) {
-         const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+       if (videoElement && videoElement.srcObject) {
+         const tracks = (videoElement.srcObject as MediaStream).getTracks();
          tracks.forEach(t => t.stop());
        }
     };
@@ -52,23 +66,23 @@ export default function MapPage() {
       const params = new URLSearchParams(window.location.search);
       const focus = params.get("focusCity");
       const mule = params.get("mule");
-      if (focus && FILTER_CITIES.includes(focus)) setSelectedCity(focus);
-      if (mule) setMuleTracker(mule);
+      setTimeout(() => {
+        if (focus && FILTER_CITIES.includes(focus)) setSelectedCity(focus);
+        if (mule) setMuleTracker(mule);
+      }, 0);
     }
   }, []);
 
   useEffect(() => {
     import("leaflet/dist/leaflet.css");
-    setLoading(true);
-    setError(false);
     getATMs(selectedCity || undefined)
       .then((data) => {
         const list = data.data || [];
         setAtms(list);
         setStats({
           total: list.length,
-          highRisk: list.filter((a: any) => a.near_state_border && a.near_highway).length,
-          medRisk: list.filter((a: any) => a.near_highway || a.near_bus_station).length,
+          highRisk: list.filter((a: ATM) => a.near_state_border && a.near_highway).length,
+          medRisk: list.filter((a: ATM) => a.near_highway || a.near_bus_station).length,
         });
       })
       .catch((err) => {
@@ -78,7 +92,7 @@ export default function MapPage() {
       .finally(() => setLoading(false));
   }, [selectedCity]);
 
-  const getRiskColor = (atm: any) => {
+  const getRiskColor = (atm: ATM) => {
     if (atm.near_state_border && atm.near_highway) return "#ff4757";
     if (atm.near_highway || atm.near_bus_station) return "#ff9f43";
     return "#06d6a0";
@@ -163,11 +177,11 @@ export default function MapPage() {
             minZoom={4}
           >
             <TileLayer
-              attribution='&copy; CARTO'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              className="dark-map-tiles"
             />
-            <MarkerClusterGroup chunkedLoading>
-              {atms.slice(0, 2000).map((atm: any) => (
+              {atms.slice(0, 2000).map((atm: ATM) => (
                 <CircleMarker key={atm.atm_id} center={[atm.lat, atm.lng]} radius={10}
                   pathOptions={{ color: getRiskColor(atm), fillColor: getRiskColor(atm), fillOpacity: 0.7, weight: 1 }}>
                   <Popup>
@@ -189,7 +203,6 @@ export default function MapPage() {
                   </Popup>
                 </CircleMarker>
               ))}
-            </MarkerClusterGroup>
           </MapContainer>
         )}
       </div>
@@ -228,7 +241,15 @@ export default function MapPage() {
                Cash dispenser will be disabled for 30 minutes.
              </p>
              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-               <button onClick={() => { alert("Lock signal transmitted successfully."); setLockModal(null); }} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold' }}>CONFIRM LOCK</button>
+               <button onClick={() => {
+                 const btn = document.getElementById('lock-confirm-btn');
+                 if (btn) {
+                   btn.textContent = '✅ LOCK ACTIVE';
+                   btn.style.background = '#10b981';
+                   btn.style.pointerEvents = 'none';
+                 }
+                 setTimeout(() => setLockModal(null), 2000);
+               }} id="lock-confirm-btn" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s ease' }}>CONFIRM LOCK</button>
                <button onClick={() => setLockModal(null)} style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #334155', padding: '8px 16px', borderRadius: 4, cursor: 'pointer' }}>CANCEL</button>
              </div>
           </div>

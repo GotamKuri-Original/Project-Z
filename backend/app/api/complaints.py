@@ -11,12 +11,15 @@ router = APIRouter()
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'datasets')
 
 
-def load_complaints():
-    return pd.read_csv(os.path.join(DATA_DIR, 'complaints.csv'))
+# Cache DataFrames in memory at startup
+_COMPLAINTS_DF = pd.read_csv(os.path.join(DATA_DIR, 'complaints.csv'))
+_ATMS_DF = pd.read_csv(os.path.join(DATA_DIR, 'atm_locations.csv'))
 
+def load_complaints():
+    return _COMPLAINTS_DF
 
 def load_atms():
-    return pd.read_csv(os.path.join(DATA_DIR, 'atm_locations.csv'))
+    return _ATMS_DF
 
 
 @router.get("/complaints")

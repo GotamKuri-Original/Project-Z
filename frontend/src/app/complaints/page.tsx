@@ -13,25 +13,40 @@ const fraudBadge: Record<string, { bg: string; color: string }> = {
   COURIER_SCAM: { bg: "rgba(255,211,42,0.12)", color: "#ffd32a" },
 };
 
+interface Complaint {
+  complaint_id: string;
+  timestamp: string;
+  fraud_type: string;
+  amount: number;
+  victim_city: string;
+  victim_state?: string;
+  reporting_delay_mins: number;
+}
+
+interface ComplaintsResponse {
+  data: Complaint[];
+  total: number;
+}
+
 export default function ComplaintsPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<ComplaintsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState("");
   
   // Investigation Panel State
-  const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [selectedCase, setSelectedCase] = useState<Complaint | null>(null);
   const [loadingCase, setLoadingCase] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
+    setTimeout(() => setLoading(true), 0);
     getComplaints({ limit: 20, offset: page * 20, fraud_type: filter || undefined })
       .then(setData).catch(console.error).finally(() => setLoading(false));
   }, [page, filter]);
 
   const openInvestigation = async (id: string) => {
     setLoadingCase(true);
-    setSelectedCase({ complaint_id: id }); // Optimistic open
+    setSelectedCase({ complaint_id: id } as Complaint); // Optimistic open
     try {
       const fullCase = await getComplaint(id);
       setSelectedCase(fullCase);
@@ -81,7 +96,7 @@ export default function ComplaintsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.data.map((c: any) => {
+                {data.data.map((c: Complaint) => {
                   const badge = fraudBadge[c.fraud_type] || { bg: "rgba(100,116,139,0.1)", color: "#64748b" };
                   const isSelected = selectedCase?.complaint_id === c.complaint_id;
                   return (
@@ -227,10 +242,21 @@ export default function ComplaintsPage() {
 
               {/* Actions */}
               <div style={{ padding: 20, borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", gap: 10 }}>
-                <button className="btn-primary" style={{ flex: 1, padding: "10px", display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
+                <button className="btn-primary" onClick={() => {
+                  if (selectedCase) {
+                    window.location.href = `/predict?city=${encodeURIComponent(selectedCase.victim_city)}&amount=${selectedCase.amount}&fraud=${encodeURIComponent(selectedCase.fraud_type)}`;
+                  }
+                }} style={{ flex: 1, padding: "10px", display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 16 }}>⚡</span> Predict Mule Flow
                 </button>
-                <button className="btn-primary" style={{ background: "rgba(239,68,68,0.1)", color: "var(--red)", border: "1px solid rgba(239,68,68,0.2)", padding: "10px 16px" }}>
+                <button id="escalate-btn" className="btn-primary" onClick={(e) => {
+                  const btn = e.currentTarget;
+                  btn.textContent = "✅ ESCALATED";
+                  btn.style.background = "rgba(16,185,129,0.15)";
+                  btn.style.color = "#10b981";
+                  btn.style.borderColor = "rgba(16,185,129,0.3)";
+                  btn.style.pointerEvents = "none";
+                }} style={{ background: "rgba(239,68,68,0.1)", color: "var(--red)", border: "1px solid rgba(239,68,68,0.2)", padding: "10px 16px" }}>
                   Escalate
                 </button>
               </div>

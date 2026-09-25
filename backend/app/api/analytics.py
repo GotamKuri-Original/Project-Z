@@ -11,12 +11,18 @@ router = APIRouter()
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'datasets')
 
 
+# Cache DataFrames in memory
+_COMPLAINTS_DF = pd.read_csv(os.path.join(DATA_DIR, 'complaints.csv'))
+_WITHDRAWALS_DF = pd.read_csv(os.path.join(DATA_DIR, 'cash_withdrawals.csv'))
+_SUSPECTS_DF = pd.read_csv(os.path.join(DATA_DIR, 'suspects.csv'))
+
+
 @router.get("/analytics/dashboard")
 def get_dashboard():
     """Get all KPI data for the main dashboard."""
-    complaints = pd.read_csv(os.path.join(DATA_DIR, 'complaints.csv'))
-    withdrawals = pd.read_csv(os.path.join(DATA_DIR, 'cash_withdrawals.csv'))
-    suspects = pd.read_csv(os.path.join(DATA_DIR, 'suspects.csv'))
+    complaints = _COMPLAINTS_DF
+    withdrawals = _WITHDRAWALS_DF
+    suspects = _SUSPECTS_DF
     
     return {
         "kpis": {
@@ -39,7 +45,7 @@ def get_dashboard():
 @router.get("/analytics/heatmap")
 def get_heatmap():
     """Get state-wise complaint data for map heatmap."""
-    complaints = pd.read_csv(os.path.join(DATA_DIR, 'complaints.csv'))
+    complaints = _COMPLAINTS_DF
     
     state_data = complaints.groupby("victim_state").agg(
         count=("complaint_id", "count"),

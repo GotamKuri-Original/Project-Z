@@ -16,6 +16,13 @@ interface PredictionResponse {
       confidence: number;
       risk_level: string;
       num_high_risk_atms: number;
+      top_atms?: Array<{
+        atm_id: string;
+        bank: string;
+        lat: number;
+        lng: number;
+        confidence: number;
+      }>;
     }>;
   };
   explainability: Array<{
@@ -109,8 +116,8 @@ export default function PredictPage() {
       const res = await predict({ ...form, victim_state: cityData?.state || "Delhi" });
       setResult(res);
       setTimeout(() => setShowResult(true), 100);
-    } catch (err) { 
-      console.error(err); 
+    } catch (err) {
+      console.error(err);
       setError(true);
     }
     setLoading(false);
@@ -313,36 +320,55 @@ export default function PredictPage() {
                     {result.prediction.zones.slice(0, 3).map((zone, i) => {
                       const barWidth = `${zone.confidence}%`;
                       const zoneColor = zone.risk_level === "CRITICAL" ? "#ef4444" : zone.risk_level === "HIGH" ? "#f59e0b" : "#eab308";
-                      // Deterministic mock ATM ID based on city length to keep it consistent
-                      const atmId = (zone.city.length * 1024) % 9000 + 1000;
+                      const topAtm = zone.top_atms && zone.top_atms.length > 0 ? zone.top_atms[0] : null;
+                      const atmId = topAtm ? topAtm.atm_id : ((zone.city.length * 1024) % 9000 + 1000).toString();
+                      const bankName = topAtm ? topAtm.bank : "ATM";
                       return (
                         <div key={i} style={{
                           background: "rgba(255,255,255,0.02)", borderRadius: 6, padding: "10px 12px",
                           border: i === 0 ? `1px solid rgba(239,68,68,0.15)` : "1px solid var(--border-color)",
-                          position: "relative", overflow: "hidden",
+                          position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "space-between"
                         }}>
                           <div style={{
                             position: "absolute", top: 0, left: 0, bottom: 0,
                             width: barWidth, background: i === 0 ? "rgba(239,68,68,0.06)" : "rgba(56,189,248,0.04)",
                             transition: "width 0.8s ease",
                           }} />
-                          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", flex: 1 }}>
                             <div>
                               <p style={{ fontWeight: 600, fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
                                 <span style={{ color: "var(--text-muted)", marginRight: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>#{i + 1}</span>
-                                ATM #{atmId}
+                                {bankName} ATM #{atmId}
                               </p>
                               <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>
-                                Location: {zone.city}, {zone.state} (Near Highway)
+                                Location: {zone.city}, {zone.state} {topAtm ? "" : "(Near Highway)"}
                               </p>
                             </div>
-                            <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 12, marginRight: 16 }}>
                               <span style={{ fontSize: 16, fontWeight: 800, color: zoneColor, fontFamily: "'JetBrains Mono', monospace" }}>
                                 {zone.confidence}%
                               </span>
                               <span className={`badge badge-${zone.risk_level.toLowerCase()}`}>{zone.risk_level}</span>
                             </div>
                           </div>
+                          
+                          {/* View on Map Button for EACH ATM */}
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/map?focusCity=${encodeURIComponent(zone.city)}&mule=${encodeURIComponent(form.last_mule_city)}`)}
+                            style={{
+                              position: "relative", zIndex: 10,
+                              background: "rgba(56,189,248,0.1)", color: "#38bdf8",
+                              border: "1px solid rgba(56,189,248,0.2)",
+                              padding: "6px 10px", borderRadius: 4,
+                              fontSize: 10, fontWeight: 700, cursor: "pointer",
+                              display: "flex", alignItems: "center", gap: 4,
+                              fontFamily: "'JetBrains Mono', monospace",
+                              textTransform: "uppercase", letterSpacing: "0.5px"
+                            }}
+                          >
+                            📍 MAP
+                          </button>
                         </div>
                       );
                     })}

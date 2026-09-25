@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SIH 2026 Idea Presentation</title>
+  <style>
+    /* Reset & Base Setup */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #555; /* Dark background for viewing on screen */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    /* PDF Print Settings */
+    @page {
+      size: 10in 5.625in; /* 16:9 Aspect Ratio like PPT */
+      margin: 0;
+    }
+    @media print {
+      body { background-color: #fff; padding: 0; display: block; }
+      .slide-container { margin: 0 !important; box-shadow: none !important; page-break-after: always; }
+      .no-print { display: none !important; }
+    }
+
+    /* Slide Container styling */
+    .slide-container {
+      width: 10in;
+      height: 5.625in;
+      background: #ffffff;
+      margin-bottom: 30px;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Logo Area */
+    .top-logo-area {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      text-align: right;
+    }
+    .top-logo-area h3 {
+      font-size: 16px;
+      color: #0f4c81;
+      margin: 0;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+    .top-logo-area span { color: #f58220; font-weight: 800; }
+
+    /* Headers */
+    .slide-header {
+      text-align: center;
+      padding-top: 35px;
+      margin-bottom: 20px;
+    }
+    .slide-header h1 {
+      font-size: 28px;
+      color: #000;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    /* Content Area */
+    .content-area {
+      flex-grow: 1;
+      padding: 0 40px 40px 40px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-pointer {
+      font-size: 18px;
+      font-weight: bold;
+      color: #000;
+      margin-top: 15px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .main-pointer::before {
+      content: '❖';
+      font-size: 20px;
+    }
+
+    .sub-pointer {
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    /* Lists */
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    li {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    li strong { color: #000; }
+
+    /* Footer */
+    .slide-footer {
+      background: #0f4c81; /* Blue footer */
+      color: white;
+      height: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      font-size: 12px;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+    }
+
+    /* Helpers */
+    .split-layout { display: flex; gap: 20px; flex-grow: 1; }
+    .split-left { flex: 1; }
+    .split-right { flex: 1; display: flex; align-items: center; justify-content: center; }
+    .mockup-img { max-width: 100%; max-height: 250px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ccc; }
+    
+    .infographic-box {
+      background: #f8f9fa;
+      border-left: 4px solid #0f4c81;
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .infographic-box h4 { margin: 0 0 4px 0; color: #0f4c81; font-size: 14px; }
+    .infographic-box p { margin: 0; font-size: 13px; color: #444; }
+
+    .print-btn {
+      padding: 12px 24px;
+      background: #f58220;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      border: none;
+      font-size: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .print-btn:hover { background: #d96f1a; }
+  </style>
+</head>
+<body>
+
+  <button class="no-print print-btn" onclick="window.print()">🖨️ Click Here to Save as PDF</button>
+
+  <!-- SLIDE 1 -->
+  <div class="slide-container">
+    <div class="top-logo-area">
+      <h3>SMART INDIA<br>HACKATHON<br><span>2026</span></h3>
+    </div>
+    <div class="slide-header" style="margin-top: 60px;">
+      <h1 style="font-size: 36px;">TITLE PAGE</h1>
+    </div>
+    <div class="content-area" style="align-items: center; justify-content: center; text-align: center;">
+      <div style="text-align: left; background: #f4f4f4; padding: 30px; border-radius: 12px; width: 80%; border-left: 6px solid #f58220;">
+        <h2 style="margin-bottom: 15px; color: #0f4c81;">CrimeShield AI</h2>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 18px; margin-bottom: 10px;"><strong>Problem Statement ID:</strong> SIH26184</li>
+          <li style="font-size: 18px; margin-bottom: 10px;"><strong>Problem Statement Title:</strong> Predictive Cybercrime Analytics & ATM Fraud Hotspot Detection</li>
+          <li style="font-size: 18px; margin-bottom: 10px;"><strong>Theme:</strong> Smart Automation / Security & Surveillance</li>
+          <li style="font-size: 18px; margin-bottom: 10px;"><strong>PS Category:</strong> Software</li>
+          <li style="font-size: 18px; margin-bottom: 10px;"><strong>Team ID:</strong> [Insert Team ID]</li>
+          <li style="font-size: 18px; margin-bottom: 10px;"><strong>Team Name:</strong> CTRL Z</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>@SIH Idea submission- Template</span>
+      <span>1</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 -->
+  <div class="slide-container">
+    <div class="top-logo-area">
+      <h3>SMART INDIA<br>HACKATHON<br><span>2026</span></h3>
+    </div>
+    <div class="slide-header">
+      <h1>IDEA TITLE: CrimeShield AI</h1>
+    </div>
+    <div class="content-area">
+      <div class="main-pointer">Proposed Solution (Describe your Idea/Solution/Prototype)</div>
+      
+      <div class="split-layout">
+        <div class="split-left">
+          <div class="sub-pointer">1. Detailed explanation of the proposed solution:</div>
+          <ul>
+            <li><strong>Auto-Trace Ingestion:</strong> Connects 1930 digital complaints to bank APIs to automatically discover mule account hops.</li>
+            <li><strong>2-Stage ML Pipeline:</strong> Predicts target city (Stage 1) and exact Top 3 ATMs (Stage 2) during the 20-minute Golden Hour.</li>
+          </ul>
+
+          <div class="sub-pointer">2. How it addresses the problem:</div>
+          <ul>
+            <li>Eliminates the 24-hour bank-freeze latency window.</li>
+            <li>Replaces un-actionable city-wide heatmaps with exact, tactical street coordinates for immediate patrol dispatch.</li>
+          </ul>
+
+          <div class="sub-pointer">3. Innovation and uniqueness of the solution:</div>
+          <ul>
+            <li><strong>Micro-Targeting:</strong> Exact GPS coordinates rather than broad zones.</li>
+            <li><strong>Explainable AI (XAI):</strong> Built-in metrics explaining why an ATM was flagged (e.g., "500m from NH-19").</li>
+          </ul>
+        </div>
+        <div class="split-right">
+          <!-- Placeholder/Uploaded Image for UI Mockup -->
+          <img class="mockup-img" src="file:///C:/Users/gotam/.gemini/antigravity-ide/brain/20231dc2-1c7d-487d-94ed-a13a4df32b37/.user_uploaded/media_1790326152531.png" alt="CrimeShield AI Interface" onerror="this.src='https://via.placeholder.com/400x250.png?text=Target+ATM+UI+Mockup'">
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>@SIH Idea submission- Template</span>
+      <span>2</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 -->
+  <div class="slide-container">
+    <div class="top-logo-area">
+      <h3>SMART INDIA<br>HACKATHON<br><span>2026</span></h3>
+    </div>
+    <div class="slide-header">
+      <h1>TECHNICAL APPROACH</h1>
+    </div>
+    <div class="content-area">
+      <div class="split-layout">
+        <div class="split-left">
+          <div class="sub-pointer">1. Technologies to be used:</div>
+          <div class="infographic-box">
+            <h4>🧠 Machine Learning & Analytics</h4>
+            <p>Python, XGBoost, Scikit-Learn (CPU-optimized, <50ms inference).</p>
+          </div>
+          <div class="infographic-box">
+            <h4>⚙️ Backend Architecture</h4>
+            <p>FastAPI (Async REST), Uvicorn, Pydantic for strict schemas.</p>
+          </div>
+          <div class="infographic-box">
+            <h4>💻 Frontend & Geospatial</h4>
+            <p>Next.js (React 19), Leaflet clustering (handles 30k+ nodes without lag).</p>
+          </div>
+        </div>
+        <div class="split-right" style="flex-direction: column; justify-content: flex-start;">
+          <div class="sub-pointer">2. Methodology & Implementation Flow:</div>
+          
+          <!-- CSS Flowchart -->
+          <div style="background: #eef2f5; padding: 10px; border-radius: 8px; width: 100%; border: 1px solid #cdd4dc;">
+            <div style="text-align: center; font-size: 12px; font-weight: bold; background: #fff; padding: 4px; border-radius: 4px; margin-bottom: 4px; border: 1px solid #ddd;">1. INGESTION (1930 / CFCFRMS)</div>
+            <div style="text-align: center; color: #0f4c81;">▼</div>
+            <div style="text-align: center; font-size: 12px; font-weight: bold; background: #fff; padding: 4px; border-radius: 4px; margin-bottom: 4px; border: 1px solid #ddd;">2. AUTO-TRACE (Bank API Handshake)</div>
+            <div style="text-align: center; color: #0f4c81;">▼</div>
+            <div style="text-align: center; font-size: 12px; font-weight: bold; background: #fff; padding: 4px; border-radius: 4px; margin-bottom: 4px; border: 1px solid #ddd;">3. MACRO-PREDICTION (Target City Corridor)</div>
+            <div style="text-align: center; color: #0f4c81;">▼</div>
+            <div style="text-align: center; font-size: 12px; font-weight: bold; background: #fff; padding: 4px; border-radius: 4px; margin-bottom: 4px; border: 1px solid #ddd;">4. MICRO-PREDICTION (Spatial Score: Top 3 ATMs)</div>
+            <div style="text-align: center; color: #0f4c81;">▼</div>
+            <div style="text-align: center; font-size: 12px; font-weight: bold; background: #fff; padding: 4px; border-radius: 4px; border: 1px solid #ddd; border-left: 4px solid #f58220;">5. CCTNS DISPATCH (Patrol Deployment)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>@SIH Idea submission- Template</span>
+      <span>3</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 -->
+  <div class="slide-container">
+    <div class="top-logo-area">
+      <h3>SMART INDIA<br>HACKATHON<br><span>2026</span></h3>
+    </div>
+    <div class="slide-header">
+      <h1>FEASIBILITY AND VIABILITY</h1>
+    </div>
+    <div class="content-area">
+      <div class="sub-pointer">Analysis of the feasibility of the idea</div>
+      <ul>
+        <li><strong>Plug-and-Play MHA Integration:</strong> Designed to ingest from NCRP/1930 and output to CCTNS without friction.</li>
+        <li><strong>Cost-Effective:</strong> Open-source framework stack removes proprietary software licensing fees.</li>
+        <li><strong>Low Hardware Overhead:</strong> XGBoost inference runs on standard police data center CPUs.</li>
+      </ul>
+
+      <div class="split-layout" style="margin-top: 15px;">
+        <div class="split-left">
+          <div class="sub-pointer">Potential challenges and risks</div>
+          <div class="infographic-box" style="border-left-color: #d9534f; background: #fdf7f7;">
+            <p><strong>1. Reporting Delay:</strong> Victims reporting crime 24 hours late.</p>
+          </div>
+          <div class="infographic-box" style="border-left-color: #d9534f; background: #fdf7f7;">
+            <p><strong>2. Data Privacy:</strong> Handling sensitive banking PII.</p>
+          </div>
+          <div class="infographic-box" style="border-left-color: #d9534f; background: #fdf7f7;">
+            <p><strong>3. Evolving Modus Operandi:</strong> Gangs shifting territories.</p>
+          </div>
+        </div>
+        <div class="split-right" style="flex-direction: column; justify-content: flex-start;">
+          <div class="sub-pointer">Strategies for overcoming challenges</div>
+          <div class="infographic-box" style="border-left-color: #5cb85c; background: #f4fbf4; width: 100%;">
+            <p><strong>1. Adaptive Latency:</strong> Model shifts target from local ATMs to highway/border ATMs if report is delayed.</p>
+          </div>
+          <div class="infographic-box" style="border-left-color: #5cb85c; background: #f4fbf4; width: 100%;">
+            <p><strong>2. Strict Privacy (SHA-256):</strong> Converts accounts to cryptographic hashes. No citizen PII is ever transmitted.</p>
+          </div>
+          <div class="infographic-box" style="border-left-color: #5cb85c; background: #f4fbf4; width: 100%;">
+            <p><strong>3. Retraining Loop:</strong> Auto-updates risk weights based on verified CCTNS arrest data.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>@SIH Idea submission- Template</span>
+      <span>4</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5 -->
+  <div class="slide-container">
+    <div class="top-logo-area">
+      <h3>SMART INDIA<br>HACKATHON<br><span>2026</span></h3>
+    </div>
+    <div class="slide-header">
+      <h1>IMPACT AND BENEFITS</h1>
+    </div>
+    <div class="content-area">
+      <div class="sub-pointer">Potential impact on the target audience</div>
+      <ul>
+        <li><strong>State Cyber Cells & I4C:</strong> Shifts departments from reactive paperwork to proactive field interdiction.</li>
+        <li><strong>PCR First Responders:</strong> Replaces vague circulars with actionable GPS coordinates and time-windows.</li>
+      </ul>
+
+      <div class="sub-pointer" style="margin-top: 20px;">Benefits of the solution (social, economic, operational)</div>
+      
+      <div style="display: flex; gap: 15px; margin-top: 10px;">
+        <div class="infographic-box" style="flex: 1; border-left-color: #f58220; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 5px;">💰</div>
+          <h4>100% Direct Recovery</h4>
+          <p style="font-size: 12px; margin-top: 5px;">Intercepting the physical runner stops the cash from entering the untraceable paper economy.</p>
+        </div>
+        <div class="infographic-box" style="flex: 1; border-left-color: #f58220; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 5px;">⛓️</div>
+          <h4>Dismantles Hierarchy</h4>
+          <p style="font-size: 12px; margin-top: 5px;">Arresting a runner yields burner phones, linking field operatives to kingpins.</p>
+        </div>
+        <div class="infographic-box" style="flex: 1; border-left-color: #f58220; text-align: center;">
+          <div style="font-size: 24px; margin-bottom: 5px;">⏱️</div>
+          <h4>The Golden Hour</h4>
+          <p style="font-size: 12px; margin-top: 5px;">Drastically reduces intervention latency from 24+ hours down to under 20 minutes.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>@SIH Idea submission- Template</span>
+      <span>5</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6 -->
+  <div class="slide-container">
+    <div class="top-logo-area">
+      <h3>SMART INDIA<br>HACKATHON<br><span>2026</span></h3>
+    </div>
+    <div class="slide-header">
+      <h1>RESEARCH AND REFERENCES</h1>
+    </div>
+    <div class="content-area">
+      <div class="sub-pointer">Details / Links of the reference and research work</div>
+      <br>
+      <div class="infographic-box">
+        <h4>1. National Crime Records Bureau (NCRB) — 'Crime in India'</h4>
+        <p>Evaluated state-wise cyber financial fraud distributions, reporting delays, and cash-out patterns (2022-2024).</p>
+      </div>
+      
+      <div class="infographic-box">
+        <h4>2. Indian Cyber Crime Coordination Centre (I4C), MHA</h4>
+        <p>Analyzed operational guidelines for the NCRP (1930) and the Citizen Financial Cyber Fraud Reporting and Management System (CFCFRMS).</p>
+      </div>
+
+      <div class="infographic-box">
+        <h4>3. Reserve Bank of India (RBI) Cyber Security Framework</h4>
+        <p>Studied regulations surrounding ATM withdrawal velocities and mule account layering methodologies.</p>
+      </div>
+
+      <div class="infographic-box">
+        <h4>4. Scalable Tree Boosting System (XGBoost Research)</h4>
+        <p>Chen, T., & Guestrin, C. (2016). Proceedings of the 22nd ACM SIGKDD International Conference.</p>
+      </div>
+
+      <div class="infographic-box">
+        <h4>5. Live Codebase & Full-Stack Prototype</h4>
+        <p>Source code, model architecture, and geospatial clustering engine are deployed and ready for live validation via GitHub.</p>
+      </div>
+
+    </div>
+    <div class="slide-footer">
+      <span>@SIH Idea submission- Template</span>
+      <span>6</span>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -40,8 +40,12 @@ html {
 }
 
 /* Hide scrollbar */
-::-webkit-scrollbar { display: none; }
-html, body {
+::-webkit-scrollbar {
+  display: none;
+}
+
+html,
+body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -56,7 +60,10 @@ body {
 body::before {
   content: '';
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
@@ -86,17 +93,39 @@ body::before {
 .stat-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 2px;
 }
 
-.stat-card.cyan::before { background: var(--cyan); }
-.stat-card.red::before { background: var(--red); }
-.stat-card.orange::before { background: var(--orange); }
-.stat-card.green::before { background: var(--green); }
-.stat-card.blue::before { background: var(--blue); }
-.stat-card.purple::before { background: var(--purple); }
-.stat-card.yellow::before { background: var(--yellow); }
+.stat-card.cyan::before {
+  background: var(--cyan);
+}
+
+.stat-card.red::before {
+  background: var(--red);
+}
+
+.stat-card.orange::before {
+  background: var(--orange);
+}
+
+.stat-card.green::before {
+  background: var(--green);
+}
+
+.stat-card.blue::before {
+  background: var(--blue);
+}
+
+.stat-card.purple::before {
+  background: var(--purple);
+}
+
+.stat-card.yellow::before {
+  background: var(--yellow);
+}
 
 /* ─── Live Pulse Indicator ─── */
 .live-pulse {
@@ -115,8 +144,17 @@ body::before {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
 }
 
 /* ─── Typography ─── */
@@ -142,10 +180,30 @@ body::before {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.badge-critical { background: rgba(239, 68, 68, 0.12); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2); }
-.badge-high { background: rgba(245, 158, 11, 0.12); color: var(--orange); border: 1px solid rgba(245, 158, 11, 0.2); }
-.badge-medium { background: rgba(234, 179, 8, 0.12); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.2); }
-.badge-low { background: rgba(16, 185, 129, 0.12); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.2); }
+
+.badge-critical {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-high {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--orange);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.badge-medium {
+  background: rgba(234, 179, 8, 0.12);
+  color: var(--yellow);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.badge-low {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--green);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
 
 /* ─── Button ─── */
 .btn-primary {
@@ -236,7 +294,11 @@ body::before {
   animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ─── Animations ─── */
 .fade-in {
@@ -244,8 +306,15 @@ body::before {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .slide-up {
@@ -253,12 +322,24 @@ body::before {
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ─── Map ─── */
 .leaflet-container {
   background: var(--bg-primary) !important;
   border-radius: 8px;
+}
+
+/* Invert standard map tiles for dark aesthetic */
+.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }

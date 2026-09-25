@@ -12,6 +12,7 @@ import numpy as np
 import pickle
 import os
 import json
+import random
 
 router = APIRouter()
 
@@ -239,7 +240,6 @@ def predict_withdrawal_location(complaint: ComplaintInput):
             })
 
     # ── Money Flow: Mule Chain Visualization ──
-    import random
     random.seed(hash(complaint.victim_city + complaint.last_mule_city + str(complaint.amount)))
 
     # Build the mule chain: Victim → Mule1 → Mule2 → ... → ATM Withdrawal
@@ -288,7 +288,7 @@ def predict_withdrawal_location(complaint: ComplaintInput):
     })
 
     return {
-        "complaint": complaint.dict(),
+        "complaint": complaint.model_dump(),
         "prediction": {
             "risk_level": "CRITICAL" if top_confidence > 30 else "HIGH" if top_confidence > 15 else "MEDIUM",
             "overall_confidence": round(top_confidence, 1),

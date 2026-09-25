@@ -13,10 +13,13 @@ router = APIRouter()
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'datasets')
 
 
-def build_network():
-    """Build a criminal network graph from suspects and mule accounts."""
-    suspects = pd.read_csv(os.path.join(DATA_DIR, 'suspects.csv'))
-    mules = pd.read_csv(os.path.join(DATA_DIR, 'mule_accounts.csv'))
+# Cache data and graph in memory
+_SUSPECTS_DF = pd.read_csv(os.path.join(DATA_DIR, 'suspects.csv'))
+_MULES_DF = pd.read_csv(os.path.join(DATA_DIR, 'mule_accounts.csv'))
+
+def _init_network():
+    suspects = _SUSPECTS_DF
+    mules = _MULES_DF
     
     G = nx.Graph()
     
@@ -54,7 +57,13 @@ def build_network():
                 if member_id != master_id:
                     G.add_edge(master_id, member_id, relation="commands")
     
-    return G, suspects, mules
+    return G
+
+_CACHED_GRAPH = _init_network()
+
+def build_network():
+    """Return the cached network graph, suspects, and mule accounts."""
+    return _CACHED_GRAPH.copy(), _SUSPECTS_DF, _MULES_DF
 
 
 @router.get("/network")
@@ -79,7 +88,7 @@ def get_network(gang_id: str = None, limit: int = 100):
     # Compute PageRank (who's the kingpin?)
     try:
         pagerank = nx.pagerank(G, max_iter=100)
-    except:
+    except Exception:
         pagerank = {n: 0.5 for n in G.nodes()}
     
     # Build nodes for vis.js
@@ -138,7 +147,7 @@ def get_network(gang_id: str = None, limit: int = 100):
 @router.get("/network/gangs")
 def get_gangs():
     """List all criminal gangs with their stats."""
-    suspects = pd.read_csv(os.path.join(DATA_DIR, 'suspects.csv'))
+    suspects = _SUSPECTS_DF
     
     gangs = []
     for gang_id in suspects["gang_id"].unique()[:50]:
