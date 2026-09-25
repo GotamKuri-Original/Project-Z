@@ -25,17 +25,8 @@ interface PredictionResponse {
       }>;
     }>;
   };
-  explainability: Array<{
-    feature: string;
-    label: string;
-    importance: number;
-  }>;
-  money_flow: Array<{
-    from: string;
-    to: string;
-    amount: number;
-    method: string;
-  }>;
+  explainability: Array<{ feature: string; label: string; importance: number; }>;
+  money_flow: Array<{ from: string; to: string; amount: number; method: string; }>;
   recommended_action: string;
 }
 
@@ -49,18 +40,30 @@ const FRAUD_TYPES = [
 ];
 
 const CITIES = [
-  { city: "Delhi", state: "Delhi" }, { city: "Mumbai", state: "Maharashtra" },
-  { city: "Bangalore", state: "Karnataka" }, { city: "Hyderabad", state: "Telangana" },
-  { city: "Chennai", state: "Tamil Nadu" }, { city: "Kolkata", state: "West Bengal" },
-  { city: "Pune", state: "Maharashtra" }, { city: "Ahmedabad", state: "Gujarat" },
-  { city: "Jaipur", state: "Rajasthan" }, { city: "Lucknow", state: "Uttar Pradesh" },
-  { city: "Chandigarh", state: "Chandigarh" }, { city: "Patna", state: "Bihar" },
-  { city: "Surat", state: "Gujarat" }, { city: "Indore", state: "Madhya Pradesh" },
-  { city: "Kochi", state: "Kerala" }, { city: "Nuh", state: "Haryana" },
-  { city: "Mathura", state: "Uttar Pradesh" }, { city: "Bharatpur", state: "Rajasthan" },
-  { city: "Jamtara", state: "Jharkhand" }, { city: "Deoghar", state: "Jharkhand" },
-  { city: "Ranchi", state: "Jharkhand" }, { city: "Nagpur", state: "Maharashtra" },
-  { city: "Coimbatore", state: "Tamil Nadu" }, { city: "Guwahati", state: "Assam" },
+  { city: "Delhi", state: "Delhi" },
+  { city: "Mumbai", state: "Maharashtra" },
+  { city: "Bangalore", state: "Karnataka" },
+  { city: "Hyderabad", state: "Telangana" },
+  { city: "Chennai", state: "Tamil Nadu" },
+  { city: "Kolkata", state: "West Bengal" },
+  { city: "Pune", state: "Maharashtra" },
+  { city: "Ahmedabad", state: "Gujarat" },
+  { city: "Jaipur", state: "Rajasthan" },
+  { city: "Lucknow", state: "Uttar Pradesh" },
+  { city: "Chandigarh", state: "Chandigarh" },
+  { city: "Patna", state: "Bihar" },
+  { city: "Surat", state: "Gujarat" },
+  { city: "Indore", state: "Madhya Pradesh" },
+  { city: "Kochi", state: "Kerala" },
+  { city: "Nuh", state: "Haryana" },
+  { city: "Mathura", state: "Uttar Pradesh" },
+  { city: "Bharatpur", state: "Rajasthan" },
+  { city: "Jamtara", state: "Jharkhand" },
+  { city: "Deoghar", state: "Jharkhand" },
+  { city: "Ranchi", state: "Jharkhand" },
+  { city: "Nagpur", state: "Maharashtra" },
+  { city: "Coimbatore", state: "Tamil Nadu" },
+  { city: "Guwahati", state: "Assam" },
   { city: "Visakhapatnam", state: "Andhra Pradesh" },
 ];
 
@@ -78,14 +81,21 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 export default function PredictPage() {
   const router = useRouter();
+
   const [form, setForm] = useState({
-    fraud_type: "UPI_FRAUD", amount: 150000, victim_city: "Delhi",
-    last_mule_city: "", mule_chain_length: 0,
-    hour_of_day: 20, day_of_week: 3, reporting_delay_mins: 25,
+    fraud_type: "UPI_FRAUD",
+    amount: 150000,
+    victim_city: "Delhi",
+    last_mule_city: "",
+    mule_chain_length: 0,
+    hour_of_day: 20,
+    day_of_week: 3,
+    reporting_delay_mins: 25,
   });
+
   const [result, setResult] = useState<PredictionResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | false>(false);
   const [showResult, setShowResult] = useState(false);
   const [isTracing, setIsTracing] = useState(false);
   const [hasTraced, setHasTraced] = useState(false);
@@ -96,6 +106,7 @@ export default function PredictPage() {
       const possibleMules = CITIES.filter(c => c.city !== form.victim_city);
       const randomMule = possibleMules[Math.floor(Math.random() * possibleMules.length)].city;
       const detectedHops = Math.floor(Math.random() * 3) + 2;
+
       setForm(f => ({ ...f, last_mule_city: randomMule, mule_chain_length: detectedHops }));
       setIsTracing(false);
       setHasTraced(true);
@@ -108,35 +119,39 @@ export default function PredictPage() {
       handleTrace();
       return;
     }
+
     setLoading(true);
     setShowResult(false);
     setError(false);
     try {
       const cityData = CITIES.find((c) => c.city === form.victim_city);
       const res = await predict({ ...form, victim_state: cityData?.state || "Delhi" });
+      if (res.error) {
+        throw new Error(res.error);
+      }
       setResult(res);
       setTimeout(() => setShowResult(true), 100);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError(true);
+      setError(err?.message || "CONNECTION FAILED");
     }
     setLoading(false);
   };
 
   const riskColors: Record<string, string> = {
-    CRITICAL: "#ef4444", HIGH: "#f59e0b", MEDIUM: "#eab308",
+    CRITICAL: "#ef4444",
+    HIGH: "#f59e0b",
+    MEDIUM: "#eab308",
   };
 
   return (
     <div className="fade-in">
       <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16, alignItems: "start" }}>
+
         {/* ─── Input Panel ─── */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ type: "spring", stiffness: 120, damping: 18 }}
-          className="glass-card"
-          style={{ padding: 16 }}
+          initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ type: "spring", stiffness: 120, damping: 18 }}
+          className="glass-card" style={{ padding: 16 }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid var(--border-color)" }}>
             <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -175,10 +190,11 @@ export default function PredictPage() {
                   DIGITAL FOOTPRINT TRACE
                 </span>
                 {!hasTraced && (
-                  <button type="button" onClick={handleTrace} disabled={isTracing} style={{
-                    background: "rgba(6,214,160,0.1)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.2)",
-                    padding: "4px 8px", borderRadius: 4, fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace"
-                  }}>
+                  <button type="button" onClick={handleTrace} disabled={isTracing}
+                    style={{
+                      background: "rgba(6,214,160,0.1)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.2)",
+                      padding: "4px 8px", borderRadius: 4, fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace"
+                    }}>
                     {isTracing ? "TRACING API..." : "AUTO-TRACE"}
                   </button>
                 )}
@@ -252,21 +268,13 @@ export default function PredictPage() {
         <div>
           <AnimatePresence mode="wait">
             {result && showResult ? (
-              <motion.div
-                key="results"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
-              >
+              <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: "spring", stiffness: 120, damping: 18 }} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                
                 {/* Threat Assessment Header */}
                 {(() => {
                   const color = riskColors[result.prediction.risk_level] || "#eab308";
                   return (
-                    <div className="glass-card" style={{
-                      padding: 16, borderLeft: `3px solid ${color}`,
-                    }}>
+                    <div className="glass-card" style={{ padding: 16, borderLeft: `3px solid ${color}`, }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
                           <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
@@ -298,12 +306,11 @@ export default function PredictPage() {
                     <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>ACTION</p>
                     <p style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500, marginTop: 2 }}>{result.recommended_action}</p>
                   </div>
-                  <button
-                    type="button"
+                  <button type="button"
                     style={{
-                      background: "var(--red)", color: "white", padding: "8px 14px", borderRadius: 6, fontSize: 11,
-                      fontWeight: 700, border: "none", cursor: "pointer", whiteSpace: "nowrap",
-                      textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace",
+                      background: "var(--red)", color: "white", padding: "8px 14px",
+                      borderRadius: 6, fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer",
+                      whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace",
                     }}
                     onClick={() => router.push(`/map?focusCity=${encodeURIComponent(result.prediction.zones[0].city)}&mule=${encodeURIComponent(form.last_mule_city)}`)}
                   >
@@ -321,20 +328,33 @@ export default function PredictPage() {
                       const barWidth = `${zone.confidence}%`;
                       const zoneColor = zone.risk_level === "CRITICAL" ? "#ef4444" : zone.risk_level === "HIGH" ? "#f59e0b" : "#eab308";
                       const topAtm = zone.top_atms && zone.top_atms.length > 0 ? zone.top_atms[0] : null;
+                      
                       const atmId = topAtm ? topAtm.atm_id : ((zone.city.length * 1024) % 9000 + 1000).toString();
                       const bankName = topAtm ? topAtm.bank : "ATM";
+                      
+                      const mapParams = new URLSearchParams({
+                        focusCity: zone.city,
+                        mule: form.last_mule_city
+                      });
+                      if (topAtm) {
+                        mapParams.set("atmId", topAtm.atm_id);
+                        mapParams.set("lat", String(topAtm.lat));
+                        mapParams.set("lng", String(topAtm.lng));
+                      }
+                      const mapHref = `/map?${mapParams.toString()}`;
+
                       return (
                         <div key={i} style={{
                           background: "rgba(255,255,255,0.02)", borderRadius: 6, padding: "10px 12px",
                           border: i === 0 ? `1px solid rgba(239,68,68,0.15)` : "1px solid var(--border-color)",
-                          position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "space-between"
+                          position: "relative", overflow: "hidden",
                         }}>
                           <div style={{
                             position: "absolute", top: 0, left: 0, bottom: 0,
                             width: barWidth, background: i === 0 ? "rgba(239,68,68,0.06)" : "rgba(56,189,248,0.04)",
                             transition: "width 0.8s ease",
                           }} />
-                          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", flex: 1 }}>
+                          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div>
                               <p style={{ fontWeight: 600, fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
                                 <span style={{ color: "var(--text-muted)", marginRight: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>#{i + 1}</span>
@@ -344,31 +364,22 @@ export default function PredictPage() {
                                 Location: {zone.city}, {zone.state} {topAtm ? "" : "(Near Highway)"}
                               </p>
                             </div>
-                            <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 12, marginRight: 16 }}>
+                            <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
                               <span style={{ fontSize: 16, fontWeight: 800, color: zoneColor, fontFamily: "'JetBrains Mono', monospace" }}>
                                 {zone.confidence}%
                               </span>
                               <span className={`badge badge-${zone.risk_level.toLowerCase()}`}>{zone.risk_level}</span>
+                              
+                              <button
+                                type="button"
+                                className="map-action-btn"
+                                onClick={() => router.push(mapHref)}
+                                aria-label={`View ${bankName} ATM ${atmId} in ${zone.city} on map`}
+                              >
+                                <span aria-hidden="true">📍</span> View on Map
+                              </button>
                             </div>
                           </div>
-                          
-                          {/* View on Map Button for EACH ATM */}
-                          <button
-                            type="button"
-                            onClick={() => router.push(`/map?focusCity=${encodeURIComponent(zone.city)}&mule=${encodeURIComponent(form.last_mule_city)}`)}
-                            style={{
-                              position: "relative", zIndex: 10,
-                              background: "rgba(56,189,248,0.1)", color: "#38bdf8",
-                              border: "1px solid rgba(56,189,248,0.2)",
-                              padding: "6px 10px", borderRadius: 4,
-                              fontSize: 10, fontWeight: 700, cursor: "pointer",
-                              display: "flex", alignItems: "center", gap: 4,
-                              fontFamily: "'JetBrains Mono', monospace",
-                              textTransform: "uppercase", letterSpacing: "0.5px"
-                            }}
-                          >
-                            📍 MAP
-                          </button>
                         </div>
                       );
                     })}
@@ -421,6 +432,7 @@ export default function PredictPage() {
                       {result.money_flow.map((step, i) => {
                         const isLast = i === result.money_flow.length - 1;
                         const nodeColor = i === 0 ? "#06d6a0" : isLast ? "#ef4444" : "#38bdf8";
+                        
                         return (
                           <div key={i}>
                             {/* Node */}
@@ -457,26 +469,16 @@ export default function PredictPage() {
                 )}
               </motion.div>
             ) : error ? (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="glass-card"
-                style={{ padding: "60px 32px", textAlign: "center" }}
-              >
-                <p style={{ fontSize: 16, color: "var(--red)", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>⚠️ CONNECTION FAILED</p>
-                <p style={{ color: "var(--text-muted)", marginTop: 8, fontSize: 13 }}>Prediction Engine is offline. Start the backend server.</p>
+              <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="glass-card" style={{ padding: "60px 32px", textAlign: "center" }}>
+                <p style={{ fontSize: 16, color: "var(--red)", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+                  ⚠️ {error === "CONNECTION FAILED" ? "CONNECTION FAILED" : "PREDICTION ERROR"}
+                </p>
+                <p style={{ color: "var(--text-muted)", marginTop: 8, fontSize: 13 }}>
+                  {error === "CONNECTION FAILED" ? "Prediction Engine is offline. Start the backend server." : error}
+                </p>
               </motion.div>
             ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="glass-card"
-                style={{ padding: "60px 32px", textAlign: "center" }}
-              >
+              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="glass-card" style={{ padding: "60px 32px", textAlign: "center" }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>Awaiting Input</p>
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
                   Enter complaint details and run the prediction engine

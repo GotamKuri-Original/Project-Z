@@ -4,7 +4,10 @@ from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
 import os
 
-prs = pptx.Presentation(r'C:\Users\gotam\Downloads\SIH2026-IDEA-Presentation-Format.pptx')
+# Construct paths cross-platform
+downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+template_path = os.path.join(downloads_dir, "SIH2026-IDEA-Presentation-Format.pptx")
+prs = pptx.Presentation(template_path)
 
 # Utility to safely replace text while keeping font
 def replace_text(shape, new_text):
@@ -68,7 +71,7 @@ add_bullet(slide2.shapes[2], "• Micro-Targeting & Automated Chain Discovery re
 add_bullet(slide2.shapes[2], "• SHAP Explainable AI integration for court-admissible deployment logs.", False, 1)
 
 # Add an image to Slide 2 if available
-image_path = r"C:\Users\gotam\.gemini\antigravity-ide\brain\20231dc2-1c7d-487d-94ed-a13a4df32b37\.user_uploaded\media_1790326152531.png" # Assuming this is a good mockup
+image_path = os.path.join(os.path.dirname(__file__), "mockup.png") 
 if os.path.exists(image_path):
     slide2.shapes.add_picture(image_path, Inches(6.5), Inches(2.5), width=Inches(3.0))
 
@@ -170,6 +173,6 @@ slides = list(xml_slides)
 xml_slides.remove(slides[6])
 
 # Save the presentation
-output_path = r'C:\Users\gotam\OneDrive\Desktop\SIH\Project-Z\Final_SIH_Presentation.pptx'
+output_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Final_SIH_Presentation.pptx')
 prs.save(output_path)
 print(f"Presentation saved to {output_path}")
