@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { Data, Edge, Network as VisNetwork, Node, Options } from "vis-network";
+import type { DataSet as VisDataSet } from "vis-data";
 import { getNetwork, getGangs } from "@/lib/api";
+import { usePolling, keepIfEqual } from "@/hooks/usePolling";
 
 interface Gang {
   gang_id: string;
@@ -16,67 +19,158 @@ interface NetworkStats {
   top_kingpin: string;
 }
 
+interface ApiNode {
+  id: string;
+  label: string;
+  role: string;
+  city: string;
+  risk: number | string;
+  size: number;
+}
+
+interface ApiEdge {
+  from: string;
+  to: string;
+  relation: string;
+}
+
+interface NetworkResponse {
+  nodes: ApiNode[];
+  edges: ApiEdge[];
+  stats: NetworkStats;
+}
+
+type VisNode = Node & { id: string };
+type VisEdge = Edge & { id: string };
+
+const ROLE_COLORS: Record<string, string> = {
+  mastermind: "#ff4757",
+  caller: "#ff9f43",
+  mule_recruiter: "#ffd32a",
+  cash_puller: "#38bdf8",
+  mule_account: "#06d6a0",
+};
+
+const NETWORK_OPTIONS: Options = {
+  physics: {
+    solver: "forceAtlas2Based",
+    forceAtlas2Based: { gravitationalConstant: -120, centralGravity: 0.015, springLength: 100, springConstant: 0.08 },
+    stabilization: { iterations: 150, fit: true },
+  },
+  interaction: { hover: true, tooltipDelay: 100, zoomSpeed: 0.5 },
+  nodes: { shape: "dot", borderWidth: 2 },
+};
+
+function toVisNode(n: ApiNode): VisNode {
+  const color = ROLE_COLORS[n.role] || "#06d6a0";
+  return {
+    id: n.id,
+    label: n.label,
+    color: {
+      background: color,
+      border: color,
+      highlight: { background: "#fff", border: color }
+    },
+    shadow: { enabled: true, color, size: 15, x: 0, y: 0 },
+    size: n.size,
+    font: { color: "#cbd5e1", size: 10, face: "Inter", strokeWidth: 2, strokeColor: "#0a0a0a" },
+    title: `${String(n.role).toUpperCase()} | ${n.city} | Risk: ${n.risk}`,
+  };
+}
+
+function toVisEdges(edges: ApiEdge[]): VisEdge[] {
+  const seen = new Map<string, number>();
+  return edges.map((e) => {
+    const base = `${e.from}->${e.to}:${e.relation}`;
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return {
+      id: n ? `${base}#${n}` : base,
+      from: e.from,
+      to: e.to,
+      color: { color: "rgba(255,255,255,0.15)", highlight: "#06d6a0", hover: "#fff" },
+      width: e.relation === "commands" ? 2.5 : 1,
+      dashes: e.relation === "controls",
+      smooth: { enabled: true, type: "continuous", roundness: 0.5 },
+    };
+  });
+}
+
+function syncDataSet<T extends { id: string }>(dataSet: VisDataSet<T>, next: T[]) {
+  const nextIds = new Set(next.map((item) => item.id));
+  const staleIds = dataSet.getIds().filter((id) => !nextIds.has(String(id)));
+  if (staleIds.length > 0) dataSet.remove(staleIds);
+  dataSet.update(next as any);
+}
+
 export default function NetworkPage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const networkRef = useRef<VisNetwork | null>(null);
+  const nodesRef = useRef<VisDataSet<VisNode> | null>(null);
+  const edgesRef = useRef<VisDataSet<VisEdge> | null>(null);
+  const signatureRef = useRef("");
+  const renderedGangRef = useRef<string | null>(null);
+
   const [gangs, setGangs] = useState<Gang[]>([]);
   const [selectedGang, setSelectedGang] = useState("");
   const [stats, setStats] = useState<NetworkStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [renderedGang, setRenderedGang] = useState<string | null>(null);
+
+  const loading = renderedGang !== selectedGang;
 
   useEffect(() => {
-    getGangs().then((d) => setGangs(d.gangs || [])).catch(console.error);
+    return () => {
+      networkRef.current?.destroy();
+      networkRef.current = null;
+    };
   }, []);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-    setLoading(true);
+  usePolling(async (isActive) => {
+    const d = await getGangs();
+    if (isActive()) setGangs((prev) => keepIfEqual(prev, d.gangs || []));
+  });
 
-    getNetwork(selectedGang || undefined)
-      .then(async (data) => {
-        setStats(data.stats);
-        const { Network } = await import("vis-network");
-        const { DataSet } = await import("vis-data");
+  usePolling(
+    async (isActive) => {
+      const gang = selectedGang;
+      const data: NetworkResponse = await getNetwork(gang || undefined);
+      if (!isActive()) return;
 
-        const roleColors: Record<string, string> = {
-          mastermind: "#ff4757", caller: "#ff9f43",
-          mule_recruiter: "#ffd32a", cash_puller: "#38bdf8", mule_account: "#06d6a0",
-        };
+      setStats((prev) => keepIfEqual(prev, data.stats));
 
-        const nodes = new DataSet(data.nodes.map((n: Record<string, unknown>) => ({
-          id: n.id, label: n.label,
-          color: {
-            background: roleColors[n.role as string] || "#06d6a0",
-            border: roleColors[n.role as string] || "#06d6a0",
-            highlight: { background: "#fff", border: roleColors[n.role as string] || "#06d6a0" },
-          },
-          shadow: { enabled: true, color: roleColors[n.role as string] || "#06d6a0", size: 15, x: 0, y: 0 },
-          size: n.size,
-          font: { color: "#cbd5e1", size: 10, face: "Inter", strokeWidth: 2, strokeColor: "#0a0a0a" },
-          title: `${String(n.role).toUpperCase()} | ${n.city} | Risk: ${n.risk}`,
-        })));
+      const container = containerRef.current;
+      if (!container) return;
 
-        const edges = new DataSet(data.edges.map((e: Record<string, unknown>, i: number) => ({
-          id: i, from: e.from, to: e.to,
-          color: { color: "rgba(255,255,255,0.15)", highlight: "#06d6a0", hover: "#fff" },
-          width: e.relation === "commands" ? 2.5 : 1,
-          dashes: e.relation === "controls",
-          smooth: { type: "continuous" },
-        })));
+      const isNewView = renderedGangRef.current !== gang;
+      const signature = JSON.stringify([data.nodes, data.edges]);
 
-        if (!containerRef.current) return;
-        new Network(containerRef.current, { nodes: nodes as unknown as import("vis-network").Node[], edges: edges as unknown as import("vis-network").Edge[] }, {
-          physics: { 
-            solver: "forceAtlas2Based",
-            forceAtlas2Based: { gravitationalConstant: -120, centralGravity: 0.015, springLength: 100, springConstant: 0.08 },
-            stabilization: { iterations: 150, fit: true },
-          },
-          interaction: { hover: true, tooltipDelay: 100, zoomSpeed: 0.5 },
-          nodes: { shape: "dot", borderWidth: 2 },
-        });
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [selectedGang]);
+      if (!isNewView && signature === signatureRef.current) return;
+
+      const nodes = data.nodes.map(toVisNode);
+      const edges = toVisEdges(data.edges);
+
+      const [{ Network }, { DataSet }] = await Promise.all([import("vis-network"), import("vis-data")]);
+
+      if (!isActive()) return;
+
+      if (!networkRef.current || isNewView || !nodesRef.current || !edgesRef.current) {
+        nodesRef.current = new DataSet<VisNode>(nodes);
+        edgesRef.current = new DataSet<VisEdge>(edges);
+
+        const graph = { nodes: nodesRef.current, edges: edgesRef.current } as unknown as Data;
+        if (networkRef.current) networkRef.current.setData(graph);
+        else networkRef.current = new Network(container, graph, NETWORK_OPTIONS);
+      } else {
+        syncDataSet(nodesRef.current, nodes);
+        syncDataSet(edgesRef.current, edges);
+      }
+
+      signatureRef.current = signature;
+      renderedGangRef.current = gang;
+      setRenderedGang(gang);
+    },
+    { intervalMs: 5000, resetKey: selectedGang },
+  );
 
   return (
     <div className="fade-in">

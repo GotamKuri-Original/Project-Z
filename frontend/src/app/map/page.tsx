@@ -5,8 +5,9 @@ import "leaflet/dist/leaflet.css";
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import type { LatLngTuple, Marker as LeafletMarker } from "leaflet";
+import type { DivIcon, LatLngTuple, Marker as LeafletMarker } from "leaflet";
 import { getATMs } from "@/lib/api";
+import { LiveCctvModal } from "@/components/LiveCctvModal";
 
 interface ATM {
   atm_id: string;
@@ -21,7 +22,7 @@ interface ATM {
   near_bus_station: boolean;
 }
 
-type TargetAtm = Pick<ATM, "atm_id" | "lat" | "lng"> & Partial<Omit<ATM, "atm_id" | "lat" | "lng">>;
+type TargetAtm = Pick<ATM, "atm_id" | "lat" | "lng"> & Partial<Omit<ATM, "atm_id" | "lat" | "lng">> & { rank?: number };
 
 type LockStatus = "idle" | "transmitting" | "active";
 
@@ -32,10 +33,10 @@ interface AtmResult {
 }
 
 interface MapViewControllerProps {
-  target: TargetAtm | null;
+  targets: TargetAtm[];
   /** null = hold the current view (data still loading); [] = national view */
   focusPoints: LatLngTuple[] | null;
-  popupContent: ReactNode;
+  renderPopup: (atm: TargetAtm) => ReactNode;
 }
 
 const INDIA_CENTER: LatLngTuple = [22.5, 78.9];
@@ -58,37 +59,54 @@ const MapViewController = dynamic<MapViewControllerProps>(
       import("leaflet"),
     ]);
 
-    const targetIcon = divIcon({
-      className: "target-lock-icon",
-      html: '<span class="target-lock"><span class="target-lock__ring"></span><span class="target-lock__ring target-lock__ring--delayed"></span><span class="target-lock__core"></span></span>',
-      iconSize: [48, 48],
-      iconAnchor: [24, 24],
-      popupAnchor: [0, -20],
-    });
+    const RINGS_HTML =
+      '<span class="target-lock__ring"></span><span class="target-lock__ring target-lock__ring--delayed"></span><span class="target-lock__core"></span>';
 
-    function Controller({ target, focusPoints, popupContent }: MapViewControllerProps) {
+    const iconCache = new Map<number, DivIcon>();
+    const getTargetIcon = (rank: number) => {
+      let icon = iconCache.get(rank);
+      if (!icon) {
+        const badge = rank > 0 ? `<span class="target-lock__rank">${rank}</span>` : "";
+        icon = divIcon({
+          className: "target-lock-icon",
+          html: `<span class="target-lock">${RINGS_HTML}${badge}</span>`,
+          iconSize: [48, 48],
+          iconAnchor: [24, 24],
+          popupAnchor: [0, -20],
+        });
+        iconCache.set(rank, icon);
+      }
+      return icon;
+    };
+
+    function Controller({ targets, focusPoints, renderPopup }: MapViewControllerProps) {
       const map = useMap();
-      const markerRef = useRef<LeafletMarker | null>(null);
+      const markerRefs = useRef(new Map<string, LeafletMarker>());
 
-      const targetId = target?.atm_id;
-      const targetLat = target?.lat;
-      const targetLng = target?.lng;
-      const hasTarget = targetId !== undefined;
+      const hasTargets = targets.length > 0;
+      const targetsKey = targets.map((t) => `${t.atm_id}@${t.lat},${t.lng}`).join("|");
 
       useEffect(() => {
-        if (targetId === undefined || targetLat === undefined || targetLng === undefined) return;
-        
-        const openPopup = () => markerRef.current?.openPopup();
-        map.once("moveend", openPopup);
-        map.flyTo([targetLat, targetLng], TARGET_ZOOM, { duration: 1.6 });
+        if (targets.length === 0) return;
 
-        return () => {
-          map.off("moveend", openPopup);
-        };
-      }, [map, targetId, targetLat, targetLng]);
+        if (targets.length === 1) {
+          const [only] = targets;
+          const openPopup = () => markerRefs.current.get(only.atm_id)?.openPopup();
+          map.once("moveend", openPopup);
+          map.flyTo([only.lat, only.lng], TARGET_ZOOM, { duration: 1.6 });
+
+          return () => {
+            map.off("moveend", openPopup);
+          };
+        }
+
+        const bounds = latLngBounds(targets.map((t): LatLngTuple => [t.lat, t.lng]));
+        map.flyToBounds(bounds, { padding: [60, 60], maxZoom: 14, duration: 1.6 });
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- targetsKey covers every field read; re-flying when ATM details load would be jarring
+      }, [map, targetsKey]);
 
       useEffect(() => {
-        if (hasTarget || focusPoints === null) return;
+        if (hasTargets || focusPoints === null) return;
         
         if (focusPoints.length === 0) {
           map.flyTo(INDIA_CENTER, INDIA_ZOOM, { duration: 1 });
@@ -96,14 +114,27 @@ const MapViewController = dynamic<MapViewControllerProps>(
         }
 
         map.flyToBounds(latLngBounds(focusPoints), { padding: [40, 40], maxZoom: 13, duration: 1.2 });
-      }, [map, hasTarget, focusPoints]);
+      }, [map, hasTargets, focusPoints]);
 
-      if (!target) return null;
+      const showRanks = targets.length > 1;
 
       return (
-        <Marker ref={markerRef} position={[target.lat, target.lng]} icon={targetIcon} zIndexOffset={1000}>
-          <Popup>{popupContent}</Popup>
-        </Marker>
+        <>
+          {targets.map((t, i) => (
+            <Marker
+              key={t.atm_id}
+              ref={(marker) => {
+                if (marker) markerRefs.current.set(t.atm_id, marker);
+                else markerRefs.current.delete(t.atm_id);
+              }}
+              position={[t.lat, t.lng]}
+              icon={getTargetIcon(showRanks ? t.rank ?? i + 1 : 0)}
+              zIndexOffset={1000 - i}
+            >
+              <Popup>{renderPopup(t)}</Popup>
+            </Marker>
+          ))}
+        </>
       );
     }
 
@@ -119,13 +150,35 @@ const FILTER_CITIES = [
   "Nagpur", "Coimbatore", "Guwahati", "Visakhapatnam"
 ];
 
-function parseTargetFromParams(params: URLSearchParams): TargetAtm | null {
-  const atmId = params.get("atmId");
-  const lat = Number.parseFloat(params.get("lat") ?? "");
-  const lng = Number.parseFloat(params.get("lng") ?? "");
+function parseTargetsFromParams(params: URLSearchParams): TargetAtm[] {
+  const ids = params.getAll("atmId");
+  const lats = params.getAll("lat");
+  const lngs = params.getAll("lng");
+  const banks = params.getAll("atmBank");
+  const cities = params.getAll("atmCity");
+  const fallbackCity = params.get("focusCity") ?? undefined;
 
-  if (!atmId || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { atm_id: atmId, lat, lng, city: params.get("focusCity") ?? undefined };
+  const seen = new Set<string>();
+  const targets: TargetAtm[] = [];
+
+  ids.forEach((atmId, i) => {
+    const lat = Number.parseFloat(lats[i] ?? "");
+    const lng = Number.parseFloat(lngs[i] ?? "");
+
+    if (!atmId || seen.has(atmId) || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    seen.add(atmId);
+
+    targets.push({
+      atm_id: atmId,
+      lat,
+      lng,
+      bank: banks[i] || undefined,
+      city: cities[i] || fallbackCity,
+      rank: targets.length + 1,
+    });
+  });
+
+  return targets;
 }
 
 const getRiskColor = (atm: ATM) => {
@@ -155,7 +208,8 @@ function MapPageContent() {
   // (no "" -> focusCity double-load of 5,000 ATMs).
   const [selectedCity, setSelectedCity] = useState(() => searchParams.get("focusCity") ?? "");
   const [muleTracker, setMuleTracker] = useState(() => searchParams.get("mule") ?? "");
-  const [target, setTarget] = useState<TargetAtm | null>(() => parseTargetFromParams(searchParams));
+  
+  const [targets, setTargets] = useState<TargetAtm[]>(() => parseTargetsFromParams(searchParams));
 
   const [atmResult, setAtmResult] = useState<AtmResult | null>(null);
   
@@ -163,7 +217,6 @@ function MapPageContent() {
   const [lockModal, setLockModal] = useState<TargetAtm | null>(null);
   const [lockStatus, setLockStatus] = useState<LockStatus>("idle");
   const [lockedAtmIds, setLockedAtmIds] = useState<ReadonlySet<string>>(() => new Set());
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   const loading = atmResult?.city !== selectedCity;
   const atms = atmResult?.atms ?? EMPTY_ATMS;
@@ -181,10 +234,14 @@ function MapPageContent() {
     return atms.map((a) => [a.lat, a.lng]);
   }, [loading, selectedCity, atms]);
 
-  const targetAtm = useMemo<TargetAtm | null>(() => {
-    if (!target) return null;
-    return atms.find((a) => a.atm_id === target.atm_id) ?? target;
-  }, [atms, target]);
+  const resolvedTargets = useMemo<TargetAtm[]>(
+    () =>
+      targets.map((t) => {
+        const match = atms.find((a) => a.atm_id === t.atm_id);
+        return match ? { ...match, rank: t.rank } : t;
+      }),
+    [atms, targets],
+  );
 
   const cityOptions = useMemo(
     () => (selectedCity && !FILTER_CITIES.includes(selectedCity) ? [...FILTER_CITIES, selectedCity] : FILTER_CITIES),
@@ -209,26 +266,6 @@ function MapPageContent() {
   }, [selectedCity]);
 
   useEffect(() => {
-    const videoElement = videoRef.current;
-    if (cctvModal && videoElement) {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          if (videoElement) {
-             videoElement.srcObject = stream;
-          }
-        })
-        .catch(err => console.error("Webcam error:", err));
-    }
-    
-    return () => {
-       if (videoElement && videoElement.srcObject) {
-         const tracks = (videoElement.srcObject as MediaStream).getTracks();
-         tracks.forEach(t => t.stop());
-       }
-    };
-  }, [cctvModal]);
-
-  useEffect(() => {
     if (!lockModal) return;
 
     if (lockStatus === "transmitting") {
@@ -250,13 +287,13 @@ function MapPageContent() {
 
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
-    setTarget(null);
+    setTargets([]);
   };
 
   const clearTracker = () => {
     setMuleTracker("");
     setSelectedCity("");
-    setTarget(null);
+    setTargets([]);
   };
 
   const openLockModal = (atm: TargetAtm) => {
@@ -275,7 +312,7 @@ function MapPageContent() {
     return (
       <div style={{ color: "#000", fontSize: 12, lineHeight: 1.6, minWidth: 180 }}>
         <p style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", letterSpacing: "0.6px", fontFamily: "'JetBrains Mono', monospace" }}>
-          ◎ TARGET LOCKED
+          ◎ {atm.rank ? `PREDICTED TARGET #${atm.rank}` : "TARGET LOCKED"}
         </p>
         <strong>{atm.atm_id}</strong>
         {atm.bank && <><br />{atm.bank}</>}
@@ -291,7 +328,7 @@ function MapPageContent() {
             type="button"
             onClick={(e) => { e.stopPropagation(); setCctvModal(atm); }}
             style={{ background: "#3b82f6", color: "white", border: "none", padding: "6px 10px", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: "bold" }}>
-            📷 ACCESS CCTV
+            CONNECT TO LIVE CCTV
           </button>
           <button 
             type="button"
@@ -342,10 +379,14 @@ function MapPageContent() {
             <p style={{ fontSize: 14, color: "var(--text-primary)", marginTop: 4 }}>
               Tracing mule accounts originating from <strong>{muleTracker}</strong>. High likelihood of cashout at ATMs in <strong>{selectedCity}</strong>.
             </p>
-            {targetAtm && (
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
-                PREDICTED TARGET: {targetAtm.bank ? `${targetAtm.bank} ` : ""}ATM #{targetAtm.atm_id} @ {targetAtm.lat.toFixed(4)}, {targetAtm.lng.toFixed(4)}
-              </p>
+            {resolvedTargets.length > 0 && (
+              <ul style={{ listStyle: "none", padding: 0, margin: "4px 0 0", display: "flex", flexDirection: "column", gap: 2 }}>
+                {resolvedTargets.map((t) => (
+                  <li key={t.atm_id} style={{ fontSize: 11, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace" }}>
+                    PREDICTED TARGET{t.rank ? ` #${t.rank}` : ""}: {t.bank ? `${t.bank} ` : ""}ATM #{t.atm_id} {t.city ? ` (${t.city})` : ""} @ {t.lat.toFixed(4)}, {t.lng.toFixed(4)}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
           <button type="button" className="btn-primary" onClick={clearTracker} style={{ background: "transparent", color: "var(--text-primary)", border: "1px solid var(--border-color)", padding: "6px 12px", fontSize: 11, whiteSpace: "nowrap" }}>
@@ -375,7 +416,7 @@ function MapPageContent() {
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff4757", display: "inline-block" }} /> Critical</span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff9f43", display: "inline-block" }} /> High</span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: "50%", background: "#06d6a0", display: "inline-block" }} /> Normal</span>
-        {targetAtm && (
+        {resolvedTargets.length > 0 && (
           <span style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--red)" }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid var(--red)", boxShadow: "0 0 6px rgba(239,68,68,0.8)", display: "inline-block" }} /> Predicted Target
           </span>
@@ -395,8 +436,8 @@ function MapPageContent() {
         ) : (
           <>
             <MapContainer
-              center={target ? [target.lat, target.lng] : INDIA_CENTER}
-              zoom={target ? 11 : INDIA_ZOOM}
+              center={targets[0] ? [targets[0].lat, targets[0].lng] : INDIA_CENTER}
+              zoom={targets[0] ? 11 : INDIA_ZOOM}
               style={{ height: "100%", width: "100%" }}
               scrollWheelZoom={true}
               maxBounds={[[6.46, 68.1], [35.5, 97.4]]}
@@ -414,14 +455,14 @@ function MapPageContent() {
                   center={[atm.lat, atm.lng]} 
                   radius={10}
                   pathOptions={{ color: getRiskColor(atm), fillColor: getRiskColor(atm), fillOpacity: 0.7, weight: 1 }}
-                  eventHandlers={{ click: () => setTarget(atm) }}
+                  eventHandlers={{ click: () => setTargets([atm]) }}
                 />
               ))}
               
               <MapViewController 
-                target={targetAtm} 
+                targets={resolvedTargets} 
                 focusPoints={focusPoints} 
-                popupContent={targetAtm ? renderAtmPopup(targetAtm) : null}
+                renderPopup={renderAtmPopup}
               />
             </MapContainer>
             
@@ -444,28 +485,7 @@ function MapPageContent() {
       </div>
 
       {/* CCTV Modal */}
-      {cctvModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div role="dialog" aria-modal="true" aria-labelledby="cctv-modal-title" style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8, width: 500, overflow: 'hidden' }}>
-            <div style={{ padding: 12, background: '#1e293b', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #334155' }}>
-              <span id="cctv-modal-title" style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>📷 LIVE CCTV FEED — ATM #{cctvModal.atm_id}</span>
-              <button type="button" aria-label="Close CCTV feed" onClick={() => setCctvModal(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>✖</button>
-            </div>
-            <div style={{ padding: 20, textAlign: 'center' }}>
-              <div style={{ width: '100%', height: 300, background: '#000', borderRadius: 4, position: 'relative', overflow: 'hidden', border: '2px solid #334155', marginBottom: 12 }}>
-                <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%) contrast(1.2)' }} />
-                <div style={{ position: 'absolute', top: '10%', left: '30%', width: '40%', height: '50%', border: '2px dashed rgba(34, 197, 94, 0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', color: 'rgba(34, 197, 94, 0.5)', fontSize: 10, paddingTop: 4 }}>FACE DETECTED</div>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '100%', background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px)', pointerEvents: 'none' }}></div>
-                <div style={{ position: 'absolute', bottom: 8, left: 8, color: '#ef4444', fontSize: 12, fontFamily: 'monospace', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }}></span> REC
-                </div>
-              </div>
-              <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: 14 }}>✅ SUSPECT MATCH IDENTIFIED</p>
-              <p style={{ color: '#cbd5e1', fontSize: 12, marginTop: 4 }}>Live feed verifying presence at ATM Location</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {cctvModal && <LiveCctvModal atm={cctvModal} onClose={() => setCctvModal(null)} />}
 
       {/* Geofence Lock Modal */}
       {lockModal && (

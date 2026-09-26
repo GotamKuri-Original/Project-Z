@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { getDashboard, getRecentComplaints } from "@/lib/api";
+import { usePolling, keepIfEqual } from "@/hooks/usePolling";
 import { motion, Variants } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -23,19 +24,29 @@ const itemVariants: Variants = {
 // Animated counter hook
 function useAnimatedCount(target: number, duration = 1200) {
   const [count, setCount] = useState(0);
-  const started = useRef(false);
+  const fromRef = useRef(0);
+
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
+    const from = fromRef.current;
+    if (from === target) return;
+
+    let frameId = 0;
     const start = performance.now();
     const step = (now: number) => {
       const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-      setCount(Math.floor(eased * target));
-      if (progress < 1) requestAnimationFrame(step);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(from + (target - from) * eased);
+      
+      fromRef.current = value;
+      setCount(value);
+      
+      if (progress < 1) frameId = requestAnimationFrame(step);
     };
-    requestAnimationFrame(step);
+    
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
   }, [target, duration]);
+
   return count;
 }
 
@@ -103,25 +114,16 @@ export default function DashboardPage() {
   const [recentComplaints, setRecentComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Initial fetch
-    Promise.all([
-      getDashboard(),
-      getRecentComplaints(10),
-    ]).then(([dashData, recent]) => {
-      setData(dashData);
-      setRecentComplaints(recent);
-    }).catch(console.error).finally(() => setLoading(false));
-
-    // Auto-refresh live threat feed every 10 seconds
-    const interval = setInterval(() => {
-      getRecentComplaints(10)
-        .then(setRecentComplaints)
-        .catch(console.error);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
+  usePolling(async (isActive) => {
+    try {
+      const [dashData, recent] = await Promise.all([getDashboard(), getRecentComplaints(10)]);
+      if (!isActive()) return;
+      setData((prev) => keepIfEqual(prev, dashData));
+      setRecentComplaints((prev) => keepIfEqual(prev, recent));
+    } finally {
+      if (isActive()) setLoading(false);
+    }
+  });
 
   if (loading) {
     return (

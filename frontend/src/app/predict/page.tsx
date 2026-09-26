@@ -30,6 +30,26 @@ interface PredictionResponse {
   recommended_action: string;
 }
 
+function buildTopTargetsMapHref(result: PredictionResponse, muleCity: string) {
+  const zones = result.prediction.zones.slice(0, 3);
+  const params = new URLSearchParams();
+  
+  if (zones[0]) params.set("focusCity", zones[0].city);
+  if (muleCity) params.set("mule", muleCity);
+  
+  for (const zone of zones) {
+    const atm = zone.top_atms?.[0];
+    if (!atm) continue;
+    params.append("atmId", atm.atm_id);
+    params.append("lat", String(atm.lat));
+    params.append("lng", String(atm.lng));
+    params.append("atmBank", atm.bank);
+    params.append("atmCity", zone.city);
+  }
+  
+  return `/map?${params.toString()}`;
+}
+
 const FRAUD_TYPES = [
   { value: "UPI_FRAUD", label: "UPI Fraud" },
   { value: "OTP_PHISHING", label: "OTP Phishing" },
@@ -312,7 +332,7 @@ export default function PredictPage() {
                       borderRadius: 6, fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer",
                       whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace",
                     }}
-                    onClick={() => router.push(`/map?focusCity=${encodeURIComponent(result.prediction.zones[0].city)}&mule=${encodeURIComponent(form.last_mule_city)}`)}
+                    onClick={() => router.push(buildTopTargetsMapHref(result, form.last_mule_city))}
                   >
                     VIEW ON MAP
                   </button>
