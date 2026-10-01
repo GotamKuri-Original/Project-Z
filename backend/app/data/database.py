@@ -275,7 +275,8 @@ def get_schema_sql() -> str:
 def write_schema_file(output_dir: str = None):
     """Write the schema SQL to a .sql file for manual execution."""
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(__file__), 'datasets')
+        # Save to backend/database
+        output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'database')
     os.makedirs(output_dir, exist_ok=True)
     path = os.path.join(output_dir, 'schema.sql')
     with open(path, 'w') as f:

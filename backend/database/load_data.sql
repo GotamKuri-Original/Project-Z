@@ -27,7 +27,7 @@ ALTER TABLE suspects         DISABLE TRIGGER ALL;
 
 -- ── 1. Load ATMs ─────────────────────────────────────────────
 \COPY atm_locations (atm_id, bank, lat, lng, city, state, area_type, near_highway, near_bus_station, near_state_border, has_cctv, daily_txn_volume, risk_score)
-FROM 'atm_locations.csv'
+FROM '../app/data/datasets/atm_locations.csv'
 WITH (FORMAT csv, HEADER true, NULL '');
 
 -- Update PostGIS geometry column from lat/lng
@@ -39,7 +39,7 @@ SELECT COUNT(*) AS atms_loaded FROM atm_locations;
 
 -- ── 2. Load Complaints (10 LAKH) ─────────────────────────────
 \COPY complaints (complaint_id, timestamp, fraud_type, amount, victim_city, victim_state, victim_lat, victim_lng, reporting_delay_mins, hour_of_day, day_of_week, is_weekend, status, priority)
-FROM 'complaints.csv'
+FROM '../app/data/datasets/complaints.csv'
 WITH (FORMAT csv, HEADER true, NULL '');
 
 -- Update PostGIS geometry column
@@ -51,7 +51,7 @@ SELECT COUNT(*) AS complaints_loaded FROM complaints;
 
 -- ── 3. Load Suspects ─────────────────────────────────────────
 \COPY suspects (suspect_id, name, phone, role, gang_id, city, state, lat, lng, risk_score, num_linked_cases)
-FROM 'suspects.csv'
+FROM '../app/data/datasets/suspects.csv'
 WITH (FORMAT csv, HEADER true, NULL '');
 
 UPDATE suspects
@@ -62,7 +62,7 @@ SELECT COUNT(*) AS suspects_loaded FROM suspects;
 
 -- ── 4. Load Mule Accounts ────────────────────────────────────
 \COPY mule_accounts (account_id, bank, holder_name, city, state, lat, lng, layer_number, controlled_by, is_active, is_frozen, account_age_days, total_inflow, total_outflow)
-FROM 'mule_accounts.csv'
+FROM '../app/data/datasets/mule_accounts.csv'
 WITH (FORMAT csv, HEADER true, NULL '');
 
 UPDATE mule_accounts
@@ -73,7 +73,7 @@ SELECT COUNT(*) AS mule_accounts_loaded FROM mule_accounts;
 
 -- ── 5. Load Cash Withdrawals (6 LAKH) ────────────────────────
 \COPY cash_withdrawals (withdrawal_id, complaint_id, atm_id, atm_city, atm_state, atm_lat, atm_lng, amount, timestamp, delay_hours, fraud_type, victim_city, last_mule_city, mule_chain_length, was_intercepted)
-FROM 'cash_withdrawals.csv'
+FROM '../app/data/datasets/cash_withdrawals.csv'
 WITH (FORMAT csv, HEADER true, NULL '');
 
 UPDATE cash_withdrawals

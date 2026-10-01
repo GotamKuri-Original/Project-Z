@@ -35,7 +35,7 @@ CREATE EXTENSION postgis;
 ```bash
 cd backend
 python -c "from app.data.database import write_schema_file; write_schema_file()"
-psql -U postgres -d crimeshield -f app/data/datasets/schema.sql
+psql -U postgres -d crimeshield -f database/schema.sql
 ```
 
 ---
@@ -52,8 +52,8 @@ python -m app.data.generator
 ### Step 5: Bulk Load into PostgreSQL
 
 ```bash
-# Change directory to where CSVs are saved
-cd app/data/datasets
+# Change directory to the new database folder where load_data.sql is located
+cd database
 psql -U postgres -d crimeshield -f load_data.sql
 ```
 
