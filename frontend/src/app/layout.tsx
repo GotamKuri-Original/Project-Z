@@ -98,12 +98,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </p>
               </div>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <span style={{
+                <span id="global-live-badge" style={{
                   padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
                   fontFamily: "'JetBrains Mono', monospace",
                   background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
                   color: "var(--green)", textTransform: "uppercase", letterSpacing: "1px",
-                  boxShadow: "0 2px 8px rgba(16,185,129,0.15)"
+                  boxShadow: "0 2px 8px rgba(16,185,129,0.15)", transition: "all 0.3s"
                 }}>
                   ● LIVE
                 </span>

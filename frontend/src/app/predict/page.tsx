@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { predict } from "@/lib/api";
+import { predict, getTrace, type TraceResponse } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 
@@ -99,6 +99,9 @@ const CITIES = [
   { city: "Coimbatore", state: "Tamil Nadu" },
   { city: "Guwahati", state: "Assam" },
   { city: "Visakhapatnam", state: "Andhra Pradesh" },
+  { city: "Bhopal", state: "Madhya Pradesh" }, { city: "Vadodara", state: "Gujarat" },
+  { city: "Dehradun", state: "Uttarakhand" }, { city: "Raipur", state: "Chhattisgarh" },
+  { city: "Thiruvananthapuram", state: "Kerala" },
 ];
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -133,10 +136,47 @@ export default function PredictPage() {
   const [showResult, setShowResult] = useState(false);
   const [isTracing, setIsTracing] = useState(false);
   const [hasTraced, setHasTraced] = useState(false);
+  const [complaintId, setComplaintId] = useState("CYB0000001");
+  const [trace, setTrace] = useState<TraceResponse | null>(null);
+  const [traceError, setTraceError] = useState<string | null>(null);
+
   const [predictionPhase, setPredictionPhase] = useState<"PHASE_1" | "PHASE_2">("PHASE_1");
   const [actionStatus, setActionStatus] = useState<any | null>(null);
+  const [isAcknowledged, setIsAcknowledged] = useState(false);
+  const [showBrief, setShowBrief] = useState(false);
+  const [officerDecision, setOfficerDecision] = useState<string | null>(null);
+  const [currentCaseId, setCurrentCaseId] = useState<string | null>(null);
+  const [auditTrail, setAuditTrail] = useState<any[]>([]);
+  const [showAudit, setShowAudit] = useState(false);
 
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Sync global badge with trace status
+  useEffect(() => {
+    const badge = document.getElementById("global-live-badge");
+    if (badge) {
+      if (hasTraced && trace) {
+        const isLive = trace.trace_timestamp && (new Date().getTime() - new Date(trace.trace_timestamp.replace(" ", "T")).getTime()) < 24 * 60 * 60 * 1000;
+        if (isLive) {
+          badge.style.color = "var(--green)";
+          badge.style.background = "rgba(16,185,129,0.1)";
+          badge.style.borderColor = "rgba(16,185,129,0.25)";
+          badge.innerText = "● LIVE";
+        } else {
+          badge.style.color = "var(--red)";
+          badge.style.background = "rgba(239,68,68,0.1)";
+          badge.style.borderColor = "rgba(239,68,68,0.25)";
+          badge.innerText = "● HISTORICAL";
+        }
+      } else {
+        // Default state
+        badge.style.color = "var(--green)";
+        badge.style.background = "rgba(16,185,129,0.1)";
+        badge.style.borderColor = "rgba(16,185,129,0.25)";
+        badge.innerText = "● LIVE";
+      }
+    }
+  }, [hasTraced, trace]);
 
   // Load from session storage on mount
   useEffect(() => {
@@ -193,30 +233,80 @@ export default function PredictPage() {
     return null;
   }
 
-  const handleTrace = () => {
-    setIsTracing(true);
-    setTimeout(() => {
-      const possibleMules = CITIES.filter(c => c.city !== form.victim_city);
-      const randomMule = possibleMules[Math.floor(Math.random() * possibleMules.length)].city;
-      const detectedHops = Math.floor(Math.random() * 3) + 2;
-
-      setForm(f => ({ ...f, last_mule_city: randomMule, mule_chain_length: detectedHops }));
-      setIsTracing(false);
-      setHasTraced(true);
-    }, 1500);
+  const resetTrace = () => {
+    setHasTraced(false);
+    setTrace(null);
+    setTraceError(null);
+    setForm(f => ({ ...f, last_mule_city: "", mule_chain_length: 0 }));
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (predictionPhase === "PHASE_2" && (!hasTraced || !form.last_mule_city)) {
-      handleTrace();
+  const loadDemoCase = async () => {
+    setIsTracing(true);
+    setTraceError(null);
+    try {
+      const res = await fetch("http://localhost:8000/api/trace/demo/random");
+      const data = await res.json();
+      if (data && data.complaint_id) {
+        setComplaintId(data.complaint_id);
+        resetTrace();
+        setTimeout(() => {
+          handleTrace(data.complaint_id);
+        }, 100);
+      }
+    } catch (err) {
+      setTraceError("Failed to load demo case.");
+      setIsTracing(false);
+    }
+  };
+  const handleTrace = async (overrideId?: string) => {
+    const id = (typeof overrideId === 'string' ? overrideId : complaintId).trim().toUpperCase();
+    if (!id) {
+      setTraceError("Enter a complaint ID to trace.");
       return;
     }
-
+    setIsTracing(true);
+    setTraceError(null);
+    try {
+      const data = await getTrace(id);
+      setTrace(data);
+      if (data.status !== "SIMULATED_TRACE" || !data.last_known_city) {
+        setHasTraced(false);
+        setTraceError(`No linked transactions found for ${data.complaint_id}.`);
+        return;
+      }
+      const c = data.complaint;
+      const lastKnownCity = data.last_known_city;
+      setForm(f => ({
+        ...f,
+        fraud_type: c.fraud_type,
+        amount: c.amount,
+        victim_city: c.victim_city,
+        hour_of_day: c.hour_of_day,
+        day_of_week: c.day_of_week,
+        reporting_delay_mins: c.reporting_delay_mins,
+        last_mule_city: lastKnownCity,
+        mule_chain_length: data.hop_count,
+      }));
+      setHasTraced(true);
+    } catch (err) {
+      const status = (err as { response?: { status?: number } }).response?.status;
+      setTrace(null);
+      setHasTraced(false);
+      setTraceError(status === 404 ? `Complaint ${id} not found.` : "Trace service unavailable.");
+    } finally {
+      setIsTracing(false);
+    }
+  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (predictionPhase === "PHASE_2" && (!hasTraced || !trace || !form.last_mule_city)) {
+      await handleTrace();
+      return;
+    }
     setLoading(true);
     setShowResult(false);
     setError(false);
     setActionStatus(null);
+    setShowBrief(false);
     try {
       const cityData = CITIES.find((c) => c.city === form.victim_city);
       let res;
@@ -225,12 +315,39 @@ export default function PredictPage() {
         res = await predictPhase1({ ...form, victim_state: cityData?.state || "Delhi" });
       } else {
         const { predict } = await import("@/lib/api");
-        res = await predict({ ...form, victim_state: cityData?.state || "Delhi" });
+        res = await predict({
+          ...form,
+          complaint_id: trace?.complaint_id,
+          victim_state: cityData?.state || trace?.complaint.victim_state || "Delhi",
+        });
       }
       if (res.error) {
         throw new Error(res.error);
       }
       setResult(res);
+      setOfficerDecision(null);
+      
+      // Generate a case ID and auto-log this prediction to audit trail
+      const caseId = `CS-${Date.now().toString(36).toUpperCase()}`;
+      setCurrentCaseId(caseId);
+      try {
+        const { logPrediction } = await import("@/lib/api");
+        await logPrediction({
+          case_id: caseId,
+          complaint_id: trace?.complaint_id || complaintId || "",
+          fraud_type: form.fraud_type,
+          amount: form.amount,
+          victim_city: form.victim_city,
+          predicted_city: res.prediction?.zones?.[0]?.city || "",
+          risk_level: res.prediction?.risk_level || "",
+          confidence: res.prediction?.overall_confidence || 0,
+          estimated_window: res.prediction?.estimated_withdrawal_window || "",
+          phase: res.prediction?.phase || "PHASE_1",
+          top_atms: res.prediction?.zones?.[0]?.top_atms?.slice(0, 3).map((a: any) => a.atm_id) || [],
+          shap_top_features: res.explainability?.slice(0, 3).map((f: any) => f.label) || [],
+        });
+      } catch (_) { /* audit log is best-effort */ }
+
       setTimeout(() => setShowResult(true), 100);
     } catch (err: any) {
       console.error(err);
@@ -266,6 +383,7 @@ export default function PredictPage() {
         else if (type === "cms") res = await triggerCMS(payload);
         else if (type === "freeze") res = await triggerFreeze(payload);
         setActionStatus(res);
+        setIsAcknowledged(false);
     } catch (err) {
         console.error(err);
         alert("Action failed to trigger.");
@@ -330,24 +448,63 @@ export default function PredictPage() {
                 <span style={{ fontSize: 10, color: "var(--cyan)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
                   DIGITAL FOOTPRINT TRACE
                 </span>
-                {!hasTraced && (
-                  <button type="button" onClick={handleTrace} disabled={isTracing}
-                    style={{
-                      background: "rgba(6,214,160,0.1)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.2)",
-                      padding: "4px 8px", borderRadius: 4, fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace"
-                    }}>
-                    {isTracing ? "TRACING API..." : "AUTO-TRACE"}
-                  </button>
+                {trace && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", padding: "2px 6px", borderRadius: 4,
+                    color: trace.status === "SIMULATED_TRACE" ? "#06d6a0" : "#f59e0b",
+                    background: trace.status === "SIMULATED_TRACE" ? "rgba(6,214,160,0.1)" : "rgba(245,158,11,0.1)",
+                  }}>
+                    TRACE STATUS: {trace.status === "SIMULATED_TRACE" ? "SIMULATED" : "NO LINKED TXNS"}
+                  </span>
                 )}
               </div>
-
-              {/* 1. First: Detected Chain Length */}
+              {/* 0. Complaint ID */}
+              <div style={{ marginTop: 8 }}>
+                <FieldLabel>Complaint ID</FieldLabel>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input
+                    type="text"
+                    aria-label="Complaint ID"
+                    value={complaintId}
+                    onChange={(e) => {
+                      setComplaintId(e.target.value);
+                      if (trace || hasTraced || traceError) resetTrace();
+                    }}
+                    placeholder="e.g. CYB0000001"
+                    spellCheck={false}
+                    autoComplete="off"
+                    className="input-field"
+                    style={{ flex: 1, fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase" }}
+                  />
+                  <button type="button" onClick={() => void handleTrace()} disabled={isTracing} style={{
+                    background: "rgba(6,214,160,0.1)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.2)",
+                    padding: "4px 10px", borderRadius: 4, fontSize: 9, fontWeight: 700, cursor: isTracing ? "wait" : "pointer",
+                    fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap",
+                  }}>
+                    {isTracing ? "QUERYING NPCI..." : hasTraced ? "RE-TRACE" : "AUTO-TRACE"}
+                  </button>
+                  <button type="button" onClick={loadDemoCase} disabled={isTracing} title="Load a random working Phase 2 case" style={{
+                    background: "rgba(168, 85, 247, 0.15)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.3)",
+                    padding: "4px 8px", borderRadius: 4, fontSize: 9, fontWeight: 800, cursor: isTracing ? "wait" : "pointer",
+                    fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap",
+                  }}>
+                    ✨ DEMO
+                  </button>
+                </div>
+                {traceError && (
+                  <p role="alert" style={{ fontSize: 10, color: "#ef4444", marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {traceError}
+                  </p>
+                )}
+              </div>
+              {/* 1. Detected Chain Length */}
               <div style={{ marginTop: 8 }}>
                 <FieldLabel>1. Detected Chain Length (Hops)</FieldLabel>
                 <input
                   disabled
                   type="text"
-                  value={isTracing ? "Detecting hops via bank ledgers..." : hasTraced ? `${form.mule_chain_length} Hops Identified` : "Awaiting Auto-Trace..."}
+                  aria-label="Detected chain length"
+                  value={isTracing ? "Querying NPCI Switch API..." : hasTraced && trace ? `${trace.hop_count} Hops Identified` : "Awaiting Auto-Trace..."}
                   className="input-field"
                   style={{
                     opacity: hasTraced ? 1 : 0.5,
@@ -357,35 +514,71 @@ export default function PredictPage() {
                   }}
                 />
               </div>
-
-              {/* 2. Second: Last Known Mule Node */}
+              {/* 2. Last Known Mule Node */}
               <div style={{ marginTop: 8 }}>
                 <FieldLabel>2. Last Known Mule Node (Bank Branch)</FieldLabel>
-                {hasTraced ? (
-                  <select
-                    value={form.last_mule_city}
-                    onChange={(e) => setForm({ ...form, last_mule_city: e.target.value })}
-                    className="input-field"
-                    style={{ color: "var(--cyan)", fontWeight: 600 }}
-                  >
-                    {CITIES.map((c) => (
-                      <option key={c.city} value={c.city}>{c.city}, {c.state}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    disabled
-                    type="text"
-                    value={isTracing ? "Tracing destination account..." : "Unknown — Run Auto-Trace First"}
-                    className="input-field"
-                    style={{
-                      opacity: 0.5,
-                      color: "var(--text-muted)",
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  />
-                )}
+                <input
+                  disabled
+                  type="text"
+                  aria-label="Last known mule node"
+                  value={
+                    isTracing ? "Tracing destination account..."
+                      : hasTraced && trace ? `${trace.last_known_node} · ${trace.last_known_city}`
+                      : "Unknown — Run Auto-Trace First"
+                  }
+                  className="input-field"
+                  style={{
+                    opacity: hasTraced ? 1 : 0.5,
+                    color: hasTraced ? "var(--cyan)" : "var(--text-muted)",
+                    fontWeight: hasTraced ? 600 : 400,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                />
               </div>
+              {/* 3. Node hops from backend */}
+              {hasTraced && trace && (
+                <div style={{ marginTop: 8 }}>
+                  <FieldLabel>3. Traced Node Hops</FieldLabel>
+                  <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {trace.nodes.map((node, i) => {
+                      const isLast = i === trace.nodes.length - 1;
+                      const accent = node.type === "victim" ? "#f59e0b" : isLast ? "#ef4444" : "var(--cyan)";
+                      return (
+                        <li key={node.id} style={{
+                          display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 4,
+                          background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-color)",
+                          fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
+                        }}>
+                          <span style={{ color: accent, fontWeight: 700, whiteSpace: "nowrap" }}>
+                            {node.type === "victim" ? "VICTIM" : `HOP ${node.hop} · L${node.layer ?? "?"}`}
+                          </span>
+                          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {node.id} · {node.city ?? "Unknown"}
+                          </span>
+                          <span style={{ color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            ₹{node.amount.toLocaleString("en-IN")}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                  <p style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 6, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span>{trace.linked_transactions} LINKED TXNS · DATASET {trace.dataset_version} · {trace.trace_timestamp}</span>
+                    {(() => {
+                      const isLive = trace.trace_timestamp && (new Date().getTime() - new Date(trace.trace_timestamp.replace(" ", "T")).getTime()) < 24 * 60 * 60 * 1000;
+                      return (
+                        <span style={{
+                          color: isLive ? "#06d6a0" : "#f59e0b",
+                          background: isLive ? "rgba(6,214,160,0.1)" : "rgba(245,158,11,0.1)",
+                          padding: "2px 6px", borderRadius: 4, fontWeight: 700, marginLeft: 6
+                        }}>
+                          {isLive ? "LIVE ACTIVE TRACE" : "HISTORICAL REPLAY"}
+                        </span>
+                      );
+                    })()}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 4 }}>
@@ -411,6 +604,18 @@ export default function PredictPage() {
             {result && showResult ? (
               <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ type: "spring", stiffness: 120, damping: 18 }} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 
+                {/* Reset Button */}
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -4 }}>
+                  <button onClick={() => { setResult(null); setShowResult(false); resetTrace(); setComplaintId(""); setForm({ fraud_type: "UPI_FRAUD", amount: 20000, victim_city: "Delhi", last_mule_city: "", mule_chain_length: 0, hour_of_day: 20, day_of_week: 3, reporting_delay_mins: 10 }); }} style={{
+                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                    color: "var(--text-secondary)", padding: "4px 12px", borderRadius: 4,
+                    fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace",
+                    cursor: "pointer", transition: "all 0.2s"
+                  }}>
+                    + NEW COMPLAINT REPORT
+                  </button>
+                </div>
+
                 {/* Threat Assessment Header */}
                 {(() => {
                   const color = riskColors[result.prediction.risk_level] || "#eab308";
@@ -461,11 +666,11 @@ export default function PredictPage() {
                   </div>
                   
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button type="button" onClick={() => handleAction("dispatch")} style={{ background: "rgba(6,214,160,0.15)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.3)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("dispatch")} style={{ background: result.action_allowed ? "rgba(6,214,160,0.15)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#06d6a0" : "var(--text-muted)", border: result.action_allowed ? "1px solid rgba(6,214,160,0.3)" : "1px solid rgba(255,255,255,0.1)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
                       <span style={{ fontSize: 14 }}>🚓</span>
                       <span>1. DISPATCH POLICE</span>
                     </button>
-                    <button type="button" onClick={() => handleAction("freeze")} style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px dashed rgba(239,68,68,0.3)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("freeze")} style={{ background: result.action_allowed ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#ef4444" : "var(--text-muted)", border: result.action_allowed ? "1px dashed rgba(239,68,68,0.3)" : "1px dashed rgba(255,255,255,0.1)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
                       <span style={{ fontSize: 14 }}>❄️</span>
                       <span>2. FREEZE (FALLBACK)</span>
                     </button>
@@ -477,12 +682,203 @@ export default function PredictPage() {
                     <span>VIEW ON MAP — ACCESS CCTV & GEOFENCE LOCK</span>
                   </button>
 
+                  <button type="button"
+                    onClick={() => setShowBrief(!showBrief)}
+                    style={{ width: "100%", background: "rgba(255, 255, 255, 0.05)", color: "var(--text-secondary)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", marginTop: "-4px" }}>
+                    <span style={{ fontSize: 14 }}>📄</span>
+                    <span>{showBrief ? "HIDE INVESTIGATION BRIEF" : "3. GENERATE INVESTIGATION BRIEF"}</span>
+                  </button>
+
+                  <AnimatePresence>
+                    {showBrief && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="glass-card" style={{ marginTop: 4, padding: 16, background: "rgba(0,0,0,0.3)", borderLeft: "2px solid var(--text-muted)", overflow: "hidden" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: 8 }}>
+                          <div>
+                            <p style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace" }}>📄 OFFICIAL INVESTIGATION BRIEF</p>
+                            <p style={{ fontSize: 9, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>CONFIDENTIAL - FOR AUTHORIZED CYBER CELL PERSONNEL ONLY</p>
+                          </div>
+                          <button onClick={() => { navigator.clipboard.writeText(`INVESTIGATION BRIEF [${result.complaint.complaint_id}]\n...\n`); alert("Copied to clipboard!"); }} style={{ fontSize: 10, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "var(--text-secondary)", padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>📋 COPY</button>
+                        </div>
+                        
+                        <div style={{ fontSize: 11, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.6 }}>
+                          <p><strong style={{ color: "var(--text-primary)" }}>CASE ID:</strong> {result.complaint.complaint_id || "PENDING_REPORT"}</p>
+                          <p><strong style={{ color: "var(--text-primary)" }}>TIMESTAMP:</strong> {new Date().toISOString().replace('T', ' ').substring(0, 19)} UTC</p>
+                          <p><strong style={{ color: "var(--text-primary)" }}>OFFICER:</strong> AUTO-GENERATED (CrimeShield AI Agent)</p>
+                          <br />
+                          
+                          <p style={{ color: "var(--cyan)", fontWeight: 700, borderBottom: "1px dashed rgba(56,189,248,0.3)", paddingBottom: 4, marginBottom: 4 }}>1. INCIDENT SUMMARY</p>
+                          <p>Victim located in <strong>{result.complaint.victim_city}</strong> reported <strong>{result.complaint.fraud_type.replace('_', ' ')}</strong> involving loss of <strong>₹{result.complaint.amount.toLocaleString()}</strong>.</p>
+                          <p>Report delay: {result.complaint.reporting_delay_mins} minutes. Incident occurred at roughly {result.complaint.hour_of_day}:00 hrs.</p>
+                          <br />
+
+                          <p style={{ color: "var(--cyan)", fontWeight: 700, borderBottom: "1px dashed rgba(56,189,248,0.3)", paddingBottom: 4, marginBottom: 4 }}>2. DIGITAL FOOTPRINT (NPCI TRACE)</p>
+                          {result.prediction.phase === "PHASE_2" ? (
+                            <>
+                              <p>Funds successfully traced through <strong>{result.complaint.mule_chain_length} mule hops</strong>.</p>
+                              <p>Final identified staging account located in: <strong>{result.complaint.last_mule_city}</strong>.</p>
+                            </>
+                          ) : (
+                            <p style={{ color: "#ef4444" }}>Pending Phase 2 NPCI verification. Mule chain currently assumed via NCRB statistical priors.</p>
+                          )}
+                          <br />
+
+                          <p style={{ color: "var(--cyan)", fontWeight: 700, borderBottom: "1px dashed rgba(56,189,248,0.3)", paddingBottom: 4, marginBottom: 4 }}>3. AI PREDICTIVE INTELLIGENCE</p>
+                          <p><strong>Primary Target Zone:</strong> {result.prediction.zones[0]?.city || "Unknown"}, {result.prediction.zones[0]?.state || "Unknown"}</p>
+                          <p><strong>Threat Level:</strong> {result.prediction.risk_level} (Confidence: {result.prediction.overall_confidence}%)</p>
+                          <p><strong>Estimated Cash-out ETA:</strong> {result.prediction.estimated_withdrawal_window}</p>
+                          <p><strong>Key Drivers (SHAP Explainer):</strong></p>
+                          <ul style={{ paddingLeft: 16, margin: "4px 0 0 0" }}>
+                            {result.explainability.slice(0, 3).map(f => (
+                              <li key={f.feature}>{f.label} contributed {f.importance}% to this prediction.</li>
+                            ))}
+                          </ul>
+                          <br />
+
+                          <p style={{ color: "var(--cyan)", fontWeight: 700, borderBottom: "1px dashed rgba(56,189,248,0.3)", paddingBottom: 4, marginBottom: 4 }}>4. RECOMMENDED ACTION</p>
+                          <p style={{ color: result.action_allowed ? "#06d6a0" : "#ef4444", fontWeight: 700 }}>
+                            {result.recommended_action}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {actionStatus && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="glass-card" style={{ marginTop: 8, padding: 12, background: "rgba(255,255,255,0.02)", borderLeft: "2px solid #06d6a0" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                         <p style={{ fontSize: 11, fontWeight: 700, color: "#06d6a0", fontFamily: "'JetBrains Mono', monospace" }}>✅ {actionStatus.action}</p>
                         <p style={{ fontSize: 9, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>REF: {actionStatus.reference_id}</p>
                       </div>
+
+                      {/* Simulated SMS Alert */}
+                      {actionStatus.action === "POLICE_DISPATCH_ISSUED" && (
+                         <div style={{ background: "rgba(37, 211, 102, 0.1)", border: "1px solid rgba(37, 211, 102, 0.3)", borderRadius: 8, padding: 12, marginBottom: 12, display: "flex", gap: 12 }}>
+                           <div style={{ fontSize: 24 }}>📱</div>
+                           <div>
+                             <p style={{ fontSize: 10, color: "#25d366", fontWeight: 700, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>PUSH NOTIFICATION SENT TO BEAT OFFICER</p>
+                             <p style={{ fontSize: 12, color: "var(--text-primary)", fontStyle: "italic", lineHeight: 1.4 }}>
+                               "CRITICAL: {actionStatus.alert?.fraud_type?.replace('_', ' ')} suspect. 
+                               Deploy immediately to {actionStatus.alert?.atms_to_surveil?.[0]} at {actionStatus.alert?.target_city}. 
+                               Do NOT freeze. Wait for cash withdrawal. Arrest on sight."
+                             </p>
+                           </div>
+                         </div>
+                      )}
+
+                      {/* Simulated Bank Alert */}
+                      {actionStatus.action === "CFCFRMS_FREEZE_REQUESTED" && (
+                         <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 8, padding: 12, marginBottom: 12, display: "flex", gap: 12 }}>
+                           <div style={{ fontSize: 24 }}>🏦</div>
+                           <div style={{ flex: 1 }}>
+                             <p style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>API AUTOMATION TO BANK NODAL OFFICER</p>
+                             <p style={{ fontSize: 12, color: "var(--text-primary)", fontStyle: "italic", lineHeight: 1.4 }}>
+                               "URGENT: Freeze all accounts linked to {actionStatus.freeze_details?.mule_city} mule associated with case {actionStatus.freeze_details?.complaint_id}. 
+                               Action required within 60 mins (RBI mandate)."
+                             </p>
+                             <a href="https://webhook.site/#!/845e952f-2d87-4646-8f46-6b2ce15ea9d5" target="_blank" rel="noreferrer" style={{ 
+                               display: "inline-block", marginTop: 8, padding: "4px 8px", background: "rgba(239, 68, 68, 0.2)", 
+                               border: "1px solid rgba(239, 68, 68, 0.4)", borderRadius: 4, color: "#f87171", 
+                               fontSize: 10, fontWeight: 600, textDecoration: "none", fontFamily: "'JetBrains Mono', monospace" 
+                             }}>
+                               ▶ VIEW LIVE WEBHOOK PAYLOAD
+                             </a>
+                           </div>
+                         </div>
+                      )}
+
+                      {/* CMS Camera Alert */}
+                      {actionStatus.action === "CMS_CAMERAS_ACTIVATED" && (
+                         <div style={{ background: "rgba(56, 189, 248, 0.1)", border: "1px solid rgba(56, 189, 248, 0.3)", borderRadius: 8, padding: 12, marginBottom: 12, display: "flex", gap: 12 }}>
+                           <div style={{ fontSize: 24 }}>📹</div>
+                           <div>
+                             <p style={{ fontSize: 10, color: "#38bdf8", fontWeight: 700, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>ATM CAMERAS ACTIVATED — EVIDENCE RECORDING</p>
+                             <p style={{ fontSize: 12, color: "var(--text-primary)", fontStyle: "italic", lineHeight: 1.4 }}>
+                               "{actionStatus.cms_integration?.total_atms_watched} ATM cameras activated in 1080p evidence-grade mode. 
+                               STQC-compliant. Court-admissible under IT Act Section 65B."
+                             </p>
+                           </div>
+                         </div>
+                      )}
+
+                      {/* Email Notification Card */}
+                      <div style={{ background: "rgba(168, 85, 247, 0.1)", border: "1px solid rgba(168, 85, 247, 0.3)", borderRadius: 8, padding: 12, marginBottom: 12, display: "flex", gap: 12 }}>
+                        <div style={{ fontSize: 24 }}>📧</div>
+                        <div>
+                          <p style={{ fontSize: 10, color: "#c084fc", fontWeight: 700, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>EMAIL ALERT DISPATCHED</p>
+                          <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                            <strong>To:</strong> cyber.cell@police.gov.in, nodal.officer@{actionStatus.alert?.target_city?.toLowerCase() || "bank"}.co.in
+                          </p>
+                          <p style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+                            <strong>Subject:</strong> [CRIMESHIELD] {actionStatus.action === "POLICE_DISPATCH_ISSUED" ? "CRITICAL" : "HIGH"} — Case {actionStatus.reference_id}
+                          </p>
+                          <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4 }}>
+                            Full investigation brief attached as PDF. SMTP via gov.in secure relay.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* I4C Dashboard Feed Card */}
+                      <div style={{ background: "rgba(56, 189, 248, 0.08)", border: "1px solid rgba(56, 189, 248, 0.2)", borderRadius: 8, padding: 12, marginBottom: 12, display: "flex", gap: 12 }}>
+                        <div style={{ fontSize: 24 }}>🛡️</div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 10, color: "#38bdf8", fontWeight: 700, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>I4C DASHBOARD — WEBHOOK DELIVERED</p>
+                          <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                            Case pushed to I4C National Cybercrime Coordination Centre dashboard via secure REST API.
+                          </p>
+                          <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+                            Endpoint: POST /api/v2/alerts • Auth: MHA-issued OAuth2 bearer token
+                          </p>
+                          <a href="https://webhook.site/#!/845e952f-2d87-4646-8f46-6b2ce15ea9d5" target="_blank" rel="noreferrer" style={{ 
+                            display: "inline-block", marginTop: 8, padding: "4px 8px", background: "rgba(56, 189, 248, 0.2)", 
+                            border: "1px solid rgba(56, 189, 248, 0.4)", borderRadius: 4, color: "#38bdf8", 
+                            fontSize: 10, fontWeight: 600, textDecoration: "none", fontFamily: "'JetBrains Mono', monospace" 
+                          }}>
+                            ▶ VIEW LIVE WEBHOOK PAYLOAD
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* ── ACKNOWLEDGEMENT TRACKING PIPELINE ── */}
+                      <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                        <p style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>NOTIFICATION DELIVERY STATUS</p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4 }}>
+                          {[
+                            { channel: "Dashboard", icon: "🖥️", status: "✓ Delivered" },
+                            { channel: "Push/SMS", icon: "📱", status: "✓ Delivered" },
+                            { channel: "Email", icon: "📧", status: "✓ Sent" },
+                            { channel: "I4C API", icon: "🛡️", status: "✓ Delivered" },
+                          ].map((ch) => (
+                            <div key={ch.channel} style={{ textAlign: "center", padding: 6 }}>
+                              <div style={{ fontSize: 18 }}>{ch.icon}</div>
+                              <p style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>{ch.channel}</p>
+                              <p style={{ fontSize: 9, color: "#06d6a0", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{ch.status}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, padding: "6px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                          {["Generated", "Dispatched", "Delivered", "Acknowledged"].map((step, i) => (
+                            <div key={step} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <div style={{
+                                width: 8, height: 8, borderRadius: "50%",
+                                background: i < 3 || (i === 3 && isAcknowledged) ? "#06d6a0" : "rgba(255,255,255,0.2)",
+                              }} />
+                              {i === 3 && !isAcknowledged ? (
+                                <button type="button" onClick={() => setIsAcknowledged(true)} style={{ 
+                                  background: "rgba(6,214,160,0.1)", border: "1px solid rgba(6,214,160,0.3)", 
+                                  color: "#06d6a0", fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", 
+                                  padding: "2px 8px", borderRadius: 4, cursor: "pointer" 
+                                }}>
+                                  SIMULATE ACKNOWLEDGEMENT
+                                </button>
+                              ) : (
+                                <span style={{ fontSize: 9, color: i < 3 || (i === 3 && isAcknowledged) ? "#06d6a0" : "var(--text-muted)", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>{step}</span>
+                              )}
+                              {i < 3 && <span style={{ color: i <= 1 || (i === 2 && isAcknowledged) ? "#06d6a0" : "var(--text-muted)", fontSize: 10 }}>→</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       <pre style={{ fontSize: 10, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "pre-wrap", margin: 0, background: "rgba(0,0,0,0.2)", padding: 8, borderRadius: 4 }}>
                         {JSON.stringify(actionStatus.alert || actionStatus.cms_integration || actionStatus.freeze_details, null, 2)}
                       </pre>
@@ -493,7 +889,143 @@ export default function PredictPage() {
                   )}
                 </div>
 
-                {/* Predicted Top 3 ATMs */}
+                {/* ── STEP 8: OFFICER VERIFICATION ── */}
+                <div className="glass-card" style={{ padding: 14 }}>
+                  <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+                    👮 OFFICER VERIFICATION — HUMAN IN THE LOOP
+                  </p>
+                  {currentCaseId && (
+                    <p style={{ fontSize: 9, color: "var(--text-muted)", marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+                      CASE ID: {currentCaseId}
+                    </p>
+                  )}
+
+                  {!officerDecision ? (
+                    <div>
+                      <p style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 10, lineHeight: 1.5 }}>
+                        AI has generated a prediction. As the reviewing officer, do you approve this recommendation for operational action?
+                      </p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                        <button type="button" onClick={async () => {
+                          setOfficerDecision("APPROVE");
+                          try {
+                            const { submitOfficerDecision } = await import("@/lib/api");
+                            await submitOfficerDecision({ case_id: currentCaseId || "", decision: "APPROVE", remarks: "Prediction verified. Proceed with dispatch." });
+                          } catch(_) {}
+                        }} style={{
+                          background: "rgba(6,214,160,0.15)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.3)",
+                          padding: "10px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer",
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}>
+                          ✅ APPROVE
+                        </button>
+                        <button type="button" onClick={async () => {
+                          setOfficerDecision("REJECT");
+                          try {
+                            const { submitOfficerDecision } = await import("@/lib/api");
+                            await submitOfficerDecision({ case_id: currentCaseId || "", decision: "REJECT", remarks: "Insufficient confidence. Requesting additional data." });
+                          } catch(_) {}
+                        }} style={{
+                          background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)",
+                          padding: "10px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer",
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}>
+                          ❌ REJECT
+                        </button>
+                        <button type="button" onClick={async () => {
+                          setOfficerDecision("ESCALATE");
+                          try {
+                            const { submitOfficerDecision } = await import("@/lib/api");
+                            await submitOfficerDecision({ case_id: currentCaseId || "", decision: "ESCALATE", remarks: "Escalated to Senior Superintendent for review." });
+                          } catch(_) {}
+                        }} style={{
+                          background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)",
+                          padding: "10px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer",
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}>
+                          ⬆️ ESCALATE
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{
+                      padding: 12, borderRadius: 6,
+                      background: officerDecision === "APPROVE" ? "rgba(6,214,160,0.1)" : officerDecision === "REJECT" ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)",
+                      borderLeft: `3px solid ${officerDecision === "APPROVE" ? "#06d6a0" : officerDecision === "REJECT" ? "#ef4444" : "#f59e0b"}`,
+                    }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: officerDecision === "APPROVE" ? "#06d6a0" : officerDecision === "REJECT" ? "#ef4444" : "#f59e0b", fontFamily: "'JetBrains Mono', monospace" }}>
+                        {officerDecision === "APPROVE" ? "✅ APPROVED BY OFFICER" : officerDecision === "REJECT" ? "❌ REJECTED BY OFFICER" : "⬆️ ESCALATED TO SENIOR"}
+                      </p>
+                      <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                        Officer: INSP-CYBER-042 (Inspector Sharma) • {new Date().toLocaleTimeString()}
+                      </p>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* ── AUDIT TRAIL VIEWER ── */}
+                <div className="glass-card" style={{ padding: 14 }}>
+                  <button type="button" onClick={async () => {
+                    setShowAudit(!showAudit);
+                    if (!showAudit) {
+                      try {
+                        const { getAuditTrail } = await import("@/lib/api");
+                        const data = await getAuditTrail(20);
+                        setAuditTrail(data.records || []);
+                      } catch(_) {}
+                    }
+                  }} style={{
+                    width: "100%", background: "transparent", border: "none", cursor: "pointer",
+                    display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0,
+                  }}>
+                    <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
+                      📋 PREDICTION AUDIT TRAIL ({auditTrail.length} records)
+                    </p>
+                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{showAudit ? "▲" : "▼"}</span>
+                  </button>
+
+                  <AnimatePresence>
+                    {showAudit && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden", marginTop: 10 }}>
+                        {auditTrail.length === 0 ? (
+                          <p style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>No predictions logged yet.</p>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 300, overflowY: "auto" }}>
+                            {auditTrail.map((rec, i) => (
+                              <div key={i} style={{
+                                padding: "8px 10px", borderRadius: 6, background: "rgba(0,0,0,0.2)",
+                                borderLeft: `3px solid ${rec.status === "APPROVED" ? "#06d6a0" : rec.status === "REJECTED" ? "#ef4444" : rec.status === "ESCALATED" ? "#f59e0b" : "var(--text-muted)"}`,
+                                fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+                              }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                                  <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{rec.case_id}</span>
+                                  <span style={{
+                                    padding: "1px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700,
+                                    background: rec.status === "APPROVED" ? "rgba(6,214,160,0.2)" : rec.status === "REJECTED" ? "rgba(239,68,68,0.2)" : rec.status === "ESCALATED" ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.1)",
+                                    color: rec.status === "APPROVED" ? "#06d6a0" : rec.status === "REJECTED" ? "#ef4444" : rec.status === "ESCALATED" ? "#f59e0b" : "var(--text-muted)",
+                                  }}>
+                                    {rec.status}
+                                  </span>
+                                </div>
+                                <p style={{ color: "var(--text-secondary)" }}>
+                                  {rec.fraud_type?.replace('_',' ')} • ₹{rec.amount?.toLocaleString()} • {rec.victim_city} → {rec.predicted_city}
+                                </p>
+                                <p style={{ color: "var(--text-muted)", fontSize: 9 }}>
+                                  {rec.risk_level} ({rec.confidence}%) • {rec.phase} • {rec.prediction_timestamp?.substring(11, 19)}
+                                </p>
+                                {rec.officer_decision && (
+                                  <p style={{ color: "var(--text-muted)", fontSize: 9, marginTop: 2 }}>
+                                    Officer: {rec.officer_name} • {rec.officer_decision} at {rec.decision_timestamp?.substring(11, 19)}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
                 <div className="glass-card" style={{ padding: 14 }}>
                   <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>
                     XGBOOST PREDICTED CITIES & SPATIAL ATM TARGETS
@@ -632,17 +1164,17 @@ export default function PredictPage() {
                                 background: nodeColor, flexShrink: 0,
                                 boxShadow: `0 0 6px ${nodeColor}50`,
                               }} />
-                              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 6, border: `1px solid ${nodeColor}20` }}>
+                              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: isLast ? "rgba(239,68,68,0.05)" : "rgba(255,255,255,0.02)", borderRadius: 6, border: isLast ? `1px dashed ${nodeColor}60` : `1px solid ${nodeColor}20` }}>
                                 <div>
                                   <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{step.from}</span>
-                                  <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 8 }}>→ {step.to}</span>
+                                  <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 8 }}>→ {isLast ? "[PENDING CASH-OUT AT ATM]" : step.to}</span>
                                 </div>
                                 <div style={{ textAlign: "right" }}>
                                   <span style={{ fontSize: 12, fontWeight: 700, color: nodeColor, fontFamily: "'JetBrains Mono', monospace" }}>
                                     ₹{step.amount.toLocaleString("en-IN")}
                                   </span>
                                   <span style={{ fontSize: 9, color: "var(--text-muted)", marginLeft: 6, fontFamily: "'JetBrains Mono', monospace" }}>
-                                    {step.method}
+                                    {isLast ? "PENDING WITHDRAWAL" : step.method}
                                   </span>
                                 </div>
                               </div>

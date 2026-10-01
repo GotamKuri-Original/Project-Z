@@ -131,7 +131,7 @@ def get_recent_complaints(limit: int = Query(10, le=50)):
 
 
 @router.get("/atms")
-def get_atms(city: str = None, limit: int = Query(500, le=5000)):
+def get_atms(city: str = None, limit: int = Query(1000, le=15000)):
     """Get ATM locations."""
     if is_db_available():
         params = {"limit": limit}

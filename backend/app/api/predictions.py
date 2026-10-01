@@ -19,6 +19,7 @@ import json
 import random
 import hashlib
 from typing import Optional
+from app.services.trace_service import build_money_flow, get_trace_service
 from app.services.atm_ranker import ATMRanker, build_ranker
 
 try:
@@ -49,6 +50,7 @@ class ComplaintInput(BaseModel):
     hour_of_day: int = 18
     day_of_week: int = 3
     reporting_delay_mins: int = 30
+    complaint_id: Optional[str] = None
 
 
 class Phase1Input(BaseModel):
@@ -231,9 +233,52 @@ def predict_phase1(complaint: Phase1Input):
         else: zone["risk_level"] = "MEDIUM"
         
     result["prediction"]["overall_confidence"] = result["prediction"]["zones"][0]["confidence"] if result["prediction"]["zones"] else 0
-    result["recommended_action"] = "MONITOR/DISPATCH — Alert local police in Top-3 zones. Wait for NPCI Phase 2 confirmation if resources are tight."
+    
+    if result["prediction"]["overall_confidence"] >= 10:
+        result["recommended_action"] = "MONITOR/DISPATCH — Alert local police. Wait for NPCI Phase 2 confirmation if resources are tight."
+        result["action_allowed"] = True
+    else:
+        result["recommended_action"] = "CONFIDENCE TOO LOW. DO NOT DISPATCH RESOURCES. WAIT FOR NPCI TRACE DATA."
+        result["action_allowed"] = False
     
     return result
+
+
+def _manual_money_flow(complaint: ComplaintInput, withdrawal_city: str) -> list:
+    """Deterministic fallback for manual what-if entries that carry no complaint_id."""
+    seed_key = f"{complaint.victim_city}|{complaint.last_mule_city}|{complaint.amount}|{complaint.mule_chain_length}"
+    rng = random.Random(int(hashlib.sha256(seed_key.encode("utf-8")).hexdigest()[:16], 16))
+    mule_cities_pool = ["Mathura", "Bharatpur", "Nuh", "Jamtara", "Deoghar", "Ranchi",
+                        "Mewat", "Surat", "Indore", "Nagpur", "Patna"]
+    available = [c for c in mule_cities_pool if c not in [complaint.victim_city, complaint.last_mule_city]]
+    chain_len = min(complaint.mule_chain_length, len(available) + 2)
+    money_flow = []
+    remaining = complaint.amount
+    first_mule = complaint.last_mule_city if chain_len <= 2 else rng.choice(available[:3])
+    money_flow.append({
+        "from": f"Victim ({complaint.victim_city})",
+        "to": f"Mule 1 ({first_mule})",
+        "amount": remaining,
+        "method": complaint.fraud_type.replace("_", " "),
+    })
+    prev_city = first_mule
+    for hop in range(2, chain_len):
+        next_city = complaint.last_mule_city if hop == chain_len - 1 else rng.choice(available)
+        remaining -= int(remaining * rng.uniform(0.05, 0.15))
+        money_flow.append({
+            "from": f"Mule {hop-1} ({prev_city})",
+            "to": f"Mule {hop} ({next_city})",
+            "amount": remaining,
+            "method": "UPI Transfer" if rng.random() > 0.3 else "NEFT/IMPS",
+        })
+        prev_city = next_city
+    money_flow.append({
+        "from": f"Mule {max(chain_len-1, 1)} ({prev_city})",
+        "to": f"ATM ({withdrawal_city})",
+        "amount": remaining,
+        "method": "Cash Withdrawal",
+    })
+    return money_flow
 
 
 @router.post("/predict")
@@ -300,6 +345,7 @@ def predict_withdrawal_location(complaint: ComplaintInput):
             },
             "explainability": feature_importance_data,
             "money_flow": money_flow,
+            "trace": None,
             "recommended_action": "DISPATCH IMMEDIATELY — High probability final cash withdrawal. NPCI confirmed mule chain.",
         }
 
@@ -346,15 +392,26 @@ def predict_withdrawal_location(complaint: ComplaintInput):
     # Overall risk assessment
     top_confidence = zone_predictions[0]["confidence"] if zone_predictions else 0
 
-    # Withdrawal window based on fraud type
-    withdrawal_windows = {
-        "UPI_FRAUD": "1-6 hours",
-        "OTP_PHISHING": "2-8 hours",
-        "KYC_FRAUD": "4-24 hours",
-        "INVESTMENT_SCAM": "6-48 hours",
-        "SEXTORTION": "12-72 hours",
-        "COURIER_SCAM": "4-24 hours",
+    # ── Step 7: Cash-out Time Window + Reporting Delay Simulator ──
+    base_cashout_times_hrs = {
+        "UPI_FRAUD": 4,
+        "OTP_PHISHING": 5,
+        "KYC_FRAUD": 12,
+        "INVESTMENT_SCAM": 24,
+        "SEXTORTION": 48,
+        "COURIER_SCAM": 16,
     }
+    
+    base_hrs = base_cashout_times_hrs.get(complaint.fraud_type, 12)
+    delay_hrs = complaint.reporting_delay_mins / 60.0
+    remaining_hrs = base_hrs - delay_hrs
+    
+    if remaining_hrs < 0:
+        estimated_withdrawal_window = "CRITICAL: LIKELY ALREADY CASHED OUT"
+    elif remaining_hrs < 2:
+        estimated_withdrawal_window = "IMMINENT: < 2 hours"
+    else:
+        estimated_withdrawal_window = f"{max(1, int(remaining_hrs - 2))} to {int(remaining_hrs + 2)} hours"
 
     # ── Explainable AI: Feature Importance ──
     feature_names_readable = {
@@ -374,65 +431,62 @@ def predict_withdrawal_location(complaint: ComplaintInput):
 
     feature_importance_data = []
     if _model is not None and _metadata is not None:
-        importances = _model.feature_importances_
         feat_names = _metadata.get("feature_names", [])
-        # Pair up and sort descending
-        paired = sorted(zip(feat_names, importances), key=lambda x: x[1], reverse=True)
-        for fname, imp in paired[:6]:  # Top 6 features
-            feature_importance_data.append({
-                "feature": fname,
-                "label": feature_names_readable.get(fname, fname),
-                "importance": round(float(imp * 100), 1),
-            })
+        try:
+            import shap
+            # Local explainability for THIS specific case (SHAP)
+            explainer = shap.TreeExplainer(_model)
+            # shap_values shape for multi-class is often a list of arrays, or a 3D array (n_samples, n_features, n_classes) depending on version
+            shap_values = explainer.shap_values(features)
+            
+            # Handle different SHAP output formats for multi-class XGBoost
+            if isinstance(shap_values, list):
+                top_class_shap = shap_values[top_indices[0]][0]
+            elif len(shap_values.shape) == 3:
+                top_class_shap = shap_values[0, :, top_indices[0]]
+            else:
+                top_class_shap = shap_values[0]
 
-    # ── Money Flow: Mule Chain Visualization ──
-    flow_seed_key = f"{complaint.victim_city}|{complaint.last_mule_city}|{complaint.amount}"
-    random.seed(int(hashlib.sha256(flow_seed_key.encode("utf-8")).hexdigest()[:16], 16))
+            abs_shap = np.abs(top_class_shap)
+            total_shap = np.sum(abs_shap)
+            normalized_shap = (abs_shap / total_shap) if total_shap > 0 else abs_shap
+            
+            paired = sorted(zip(feat_names, normalized_shap), key=lambda x: x[1], reverse=True)
+            for fname, imp in paired[:6]:  # Top 6 features for this specific case
+                feature_importance_data.append({
+                    "feature": fname,
+                    "label": feature_names_readable.get(fname, fname),
+                    "importance": round(float(imp * 100), 1),
+                })
+        except ImportError:
+            # Fallback to global feature importance if SHAP is missing
+            importances = _model.feature_importances_
+            paired = sorted(zip(feat_names, importances), key=lambda x: x[1], reverse=True)
+            for fname, imp in paired[:6]:
+                feature_importance_data.append({
+                    "feature": fname,
+                    "label": feature_names_readable.get(fname, fname),
+                    "importance": round(float(imp * 100), 1),
+                })
 
-    # Build the mule chain: Victim → Mule1 → Mule2 → ... → ATM Withdrawal
-    mule_cities_pool = ["Mathura", "Bharatpur", "Nuh", "Jamtara", "Deoghar", "Ranchi", 
-                        "Mewat", "Surat", "Indore", "Nagpur", "Patna"]
-    # Remove victim and last mule to avoid duplicates
-    available = [c for c in mule_cities_pool if c not in [complaint.victim_city, complaint.last_mule_city]]
-    
-    chain_len = min(complaint.mule_chain_length, len(available) + 2)
+    # ── Money Flow: Mule Chain from the deterministic trace ──
     withdrawal_city = zone_predictions[0]["city"] if zone_predictions else "Unknown"
-    
-    # Build the flow
-    money_flow = []
-    remaining = complaint.amount
-    
-    # Step 1: Victim sends money
-    first_mule = complaint.last_mule_city if chain_len <= 1 else random.choice(available[:3])
-    money_flow.append({
-        "from": f"Victim ({complaint.victim_city})",
-        "to": f"Mule 1 ({first_mule})",
-        "amount": remaining,
-        "method": complaint.fraud_type.replace("_", " "),
-    })
-    
-    # Intermediate mules
-    prev_city = first_mule
-    for hop in range(2, chain_len + 1):
-        next_city = complaint.last_mule_city if hop == chain_len else random.choice(available)
-        # Each hop skims 5-15%
-        skim = int(remaining * random.uniform(0.05, 0.15))
-        remaining -= skim
-        money_flow.append({
-            "from": f"Mule {hop-1} ({prev_city})",
-            "to": f"Mule {hop} ({next_city})",
-            "amount": remaining,
-            "method": "UPI Transfer" if random.random() > 0.3 else "NEFT/IMPS",
-        })
-        prev_city = next_city
-    
-    # Final: Last mule withdraws at ATM
-    money_flow.append({
-        "from": f"Mule {max(chain_len, 1)} ({prev_city})",
-        "to": f"ATM ({withdrawal_city})",
-        "amount": remaining,
-        "method": "Cash Withdrawal",
-    })
+    trace_service = get_trace_service()
+    trace = (
+        trace_service.trace(complaint.complaint_id)
+        if trace_service is not None and complaint.complaint_id
+        else None
+    )
+    if trace is not None and trace["status"] == "SIMULATED_TRACE":
+        money_flow = build_money_flow(trace, withdrawal_city)
+    else:
+        money_flow = _manual_money_flow(complaint, withdrawal_city)
+    trace_summary = None
+    if trace is not None:
+        trace_summary = {
+            key: trace[key]
+            for key in ("complaint_id", "status", "hop_count", "last_known_node", "last_known_city", "dataset_version")
+        }
 
     return {
         "complaint": complaint.model_dump(),
@@ -441,7 +495,7 @@ def predict_withdrawal_location(complaint: ComplaintInput):
             "phase_note": "NPCI-Enriched Prediction. Mule city confirmed via NPCI webhook.",
             "risk_level": "CRITICAL" if top_confidence > 30 else "HIGH" if top_confidence > 15 else "MEDIUM",
             "overall_confidence": round(top_confidence, 1),
-            "estimated_withdrawal_window": withdrawal_windows.get(complaint.fraud_type, "2-24 hours"),
+            "estimated_withdrawal_window": estimated_withdrawal_window,
             "zones": zone_predictions,
             "ranked_atms": ranking["ranked_atms"],
             "ranking": {
@@ -458,10 +512,14 @@ def predict_withdrawal_location(complaint: ComplaintInput):
         },
         "explainability": feature_importance_data,
         "money_flow": money_flow,
+        "trace": trace_summary,
+        "action_allowed": top_confidence >= 5,
         "recommended_action": (
             "DISPATCH IMMEDIATELY — High probability final cash withdrawal. NPCI confirmed mule chain."
-            if top_confidence > 30
+            if top_confidence >= 30
             else "DEPLOY BEAT OFFICER to highest-risk zones."
+            if top_confidence >= 5
+            else "CONFIDENCE TOO LOW (< 5%). FALSE ALARM RISK HIGH. DO NOT DISPATCH RESOURCES."
         ),
     }
 

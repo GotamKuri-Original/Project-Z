@@ -64,12 +64,17 @@ INDIAN_CITIES = [
     {"city": "Dehradun", "state": "Uttarakhand", "lat": 30.316, "lng": 78.032, "population_weight": 3},
     {"city": "Raipur", "state": "Chhattisgarh", "lat": 21.250, "lng": 81.629, "population_weight": 3},
     {"city": "Thiruvananthapuram", "state": "Kerala", "lat": 8.524, "lng": 76.936, "population_weight": 3},
-    # Cybercrime hubs (higher fraud origination)
+    # Cybercrime hubs (higher fraud origination & mule activity based on 2024 I4C Data)
     {"city": "Jamtara", "state": "Jharkhand", "lat": 23.957, "lng": 86.804, "population_weight": 2},
     {"city": "Nuh", "state": "Haryana", "lat": 28.100, "lng": 77.002, "population_weight": 2},
     {"city": "Bharatpur", "state": "Rajasthan", "lat": 27.217, "lng": 77.490, "population_weight": 2},
     {"city": "Deoghar", "state": "Jharkhand", "lat": 24.484, "lng": 86.695, "population_weight": 2},
     {"city": "Mathura", "state": "Uttar Pradesh", "lat": 27.492, "lng": 77.673, "population_weight": 2},
+    {"city": "Purulia", "state": "West Bengal", "lat": 23.332, "lng": 86.361, "population_weight": 2},
+    {"city": "Daman", "state": "Dadra and Nagar Haveli and Daman and Diu", "lat": 20.397, "lng": 72.832, "population_weight": 2},
+    {"city": "Mysuru", "state": "Karnataka", "lat": 12.295, "lng": 76.639, "population_weight": 3},
+    {"city": "Vijayawada", "state": "Andhra Pradesh", "lat": 16.506, "lng": 80.648, "population_weight": 4},
+    {"city": "Madurai", "state": "Tamil Nadu", "lat": 9.925, "lng": 78.119, "population_weight": 4},
 ]
 
 CITY_NAMES = [c["city"] for c in INDIAN_CITIES]
@@ -89,11 +94,11 @@ FRAUD_TYPES = {
 
 CASHOUT_CORRIDORS = {
     "Delhi":     ["Nuh", "Mathura", "Bharatpur", "Chandigarh", "Lucknow", "Delhi"],
-    "Mumbai":    ["Pune", "Surat", "Nagpur", "Ahmedabad", "Mumbai", "Indore"],
-    "Bangalore": ["Chennai", "Hyderabad", "Coimbatore", "Kochi", "Bangalore"],
-    "Kolkata":   ["Patna", "Ranchi", "Guwahati", "Kolkata", "Deoghar"],
-    "Hyderabad": ["Bangalore", "Chennai", "Visakhapatnam", "Hyderabad", "Nagpur"],
-    "Chennai":   ["Bangalore", "Coimbatore", "Kochi", "Chennai", "Hyderabad"],
+    "Mumbai":    ["Pune", "Surat", "Nagpur", "Ahmedabad", "Mumbai", "Indore", "Daman"],
+    "Bangalore": ["Chennai", "Hyderabad", "Coimbatore", "Kochi", "Bangalore", "Mysuru"],
+    "Kolkata":   ["Patna", "Ranchi", "Guwahati", "Kolkata", "Deoghar", "Purulia"],
+    "Hyderabad": ["Bangalore", "Chennai", "Visakhapatnam", "Hyderabad", "Nagpur", "Vijayawada"],
+    "Chennai":   ["Bangalore", "Coimbatore", "Kochi", "Chennai", "Hyderabad", "Madurai"],
     "default":   ["Delhi", "Mumbai", "Bangalore", "Hyderabad", "Pune"],
 }
 
@@ -147,12 +152,12 @@ def generate_atm_locations(n=12000):
     return df
 
 
-def generate_complaints(n=1000000, atm_df=None):
+def generate_complaints(n=500000, atm_df=None):
     """
-    Generate 10,00,000 (10 LAKH) cybercrime complaints.
-    Uses vectorized NumPy for speed (~45s on modern hardware).
+    Generate 5,00,000 (5 LAKH) cybercrime complaints.
+    Uses vectorized NumPy for speed.
     """
-    print(f"📝 Generating {n:,} complaints (10 lakh)...")
+    print(f"📝 Generating {n:,} complaints (5 lakh)...")
 
     fraud_type_names = list(FRAUD_TYPES.keys())
     fraud_weights = [FRAUD_TYPES[ft]["weight"] for ft in fraud_type_names]
@@ -183,9 +188,9 @@ def generate_complaints(n=1000000, atm_df=None):
         amounts[mask] = np.clip(raw, min_amt, max_amt).astype(int)
     amounts = (amounts // 100) * 100  # round to nearest 100
 
-    # Vectorized timestamps (2.5 year range)
+    # Vectorized timestamps (2.5 year range up to TODAY)
     start = datetime(2024, 1, 1)
-    end = datetime(2026, 8, 31)
+    end = datetime.now()
     range_seconds = int((end - start).total_seconds())
     offsets = np.random.randint(0, range_seconds, n)
     timestamps = np.array([start + timedelta(seconds=int(s)) for s in offsets])
@@ -409,7 +414,7 @@ def generate_cash_withdrawals(n=600000, complaints_df=None, atm_df=None):
 if __name__ == "__main__":
     print("=" * 60)
     print("🎲 CrimeShield AI — PostgreSQL Data Generator v2")
-    print("   Target: 10 LAKH complaints + proportional tables")
+    print("   Target: 5 LAKH complaints + proportional tables")
     print("=" * 60)
     print()
 
@@ -417,8 +422,8 @@ if __name__ == "__main__":
     atm_df = generate_atm_locations(12000)
     print()
 
-    # Step 2: Complaints (10 LAKH = 1,000,000)
-    complaints_df = generate_complaints(1000000, atm_df)
+    # Step 2: Complaints (5 LAKH = 500,000)
+    complaints_df = generate_complaints(500000, atm_df)
     print()
 
     # Step 3: Suspects (5K across 250 gangs)
@@ -429,8 +434,16 @@ if __name__ == "__main__":
     mule_df = generate_mule_accounts(50000, suspects_df)
     print()
 
-    # Step 5: Cash withdrawals (6 LAKH = 600,000)
-    withdrawals_df = generate_cash_withdrawals(600000, complaints_df, atm_df)
+    # Step 5: Cash withdrawals (3 LAKH = 300,000)
+    withdrawals_df = generate_cash_withdrawals(300000, complaints_df, atm_df)
+    print()
+
+    # Step 6: Extract 1000 "Live Demo" Cases (Most recent 24 hours)
+    print("🎬 Extracting 1000 'Live Demo' cases for the hackathon presentation...")
+    demo_df = complaints_df[complaints_df['complaint_id'].isin(withdrawals_df['complaint_id'])]
+    demo_df = demo_df.sort_values(by="timestamp", ascending=False).head(1000)
+    demo_df.to_csv(os.path.join(OUTPUT_DIR, 'live_demo_cases.csv'), index=False)
+    print("   ✅ Saved 1000 recent cases to live_demo_cases.csv")
     print()
 
     # Summary
