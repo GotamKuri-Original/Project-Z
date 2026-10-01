@@ -158,8 +158,8 @@ export default function NetworkPage() {
         edgesRef.current = new DataSet<VisEdge>(edges);
 
         const graph = { nodes: nodesRef.current, edges: edgesRef.current } as unknown as Data;
-        if (networkRef.current) networkRef.current.setData(graph);
-        else networkRef.current = new Network(container, graph, NETWORK_OPTIONS);
+        if (networkRef.current) networkRef.current.destroy();
+        networkRef.current = new Network(container, graph, NETWORK_OPTIONS);
       } else {
         syncDataSet(nodesRef.current, nodes);
         syncDataSet(edgesRef.current, edges);

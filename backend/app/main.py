@@ -11,7 +11,7 @@ What is an API?
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import complaints, predictions, network, analytics
+from app.api import complaints, predictions, network, analytics, actions
 
 app = FastAPI(
     title="CrimeShield AI",
@@ -37,6 +37,7 @@ app.include_router(complaints.router, prefix="/api", tags=["Complaints"])
 app.include_router(predictions.router, prefix="/api", tags=["Predictions"])
 app.include_router(network.router, prefix="/api", tags=["Network"])
 app.include_router(analytics.router, prefix="/api", tags=["Analytics"])
+app.include_router(actions.router, prefix="/api", tags=["Actions"])
 
 
 @app.get("/")

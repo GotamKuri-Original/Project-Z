@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { predict } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 
 interface PredictionResponse {
   prediction: {
+    phase: string;
+    phase_note?: string;
     risk_level: string;
     overall_confidence: number;
     estimated_withdrawal_window: string;
@@ -38,13 +40,14 @@ function buildTopTargetsMapHref(result: PredictionResponse, muleCity: string) {
   if (muleCity) params.set("mule", muleCity);
   
   for (const zone of zones) {
-    const atm = zone.top_atms?.[0];
-    if (!atm) continue;
-    params.append("atmId", atm.atm_id);
-    params.append("lat", String(atm.lat));
-    params.append("lng", String(atm.lng));
-    params.append("atmBank", atm.bank);
-    params.append("atmCity", zone.city);
+    const topAtms = zone.top_atms?.slice(0, 3) || [];
+    for (const atm of topAtms) {
+      params.append("atmId", atm.atm_id);
+      params.append("lat", String(atm.lat));
+      params.append("lng", String(atm.lng));
+      params.append("atmBank", atm.bank);
+      params.append("atmCity", zone.city);
+    }
   }
   
   return `/map?${params.toString()}`;
@@ -104,13 +107,13 @@ export default function PredictPage() {
 
   const [form, setForm] = useState({
     fraud_type: "UPI_FRAUD",
-    amount: 150000,
+    amount: 20000,
     victim_city: "Delhi",
     last_mule_city: "",
     mule_chain_length: 0,
     hour_of_day: 20,
     day_of_week: 3,
-    reporting_delay_mins: 25,
+    reporting_delay_mins: 10,
   });
 
   const [result, setResult] = useState<PredictionResponse | null>(null);
@@ -119,6 +122,65 @@ export default function PredictPage() {
   const [showResult, setShowResult] = useState(false);
   const [isTracing, setIsTracing] = useState(false);
   const [hasTraced, setHasTraced] = useState(false);
+  const [predictionPhase, setPredictionPhase] = useState<"PHASE_1" | "PHASE_2">("PHASE_1");
+  const [actionStatus, setActionStatus] = useState<any | null>(null);
+
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load from session storage on mount
+  useEffect(() => {
+    const savedForm = sessionStorage.getItem("predict_form");
+    if (savedForm) {
+      try {
+        setForm(JSON.parse(savedForm));
+      } catch (e) {}
+    }
+
+    const savedResult = sessionStorage.getItem("predict_result");
+    if (savedResult) {
+      try {
+        setResult(JSON.parse(savedResult));
+        setShowResult(true);
+      } catch (e) {}
+    }
+
+    const savedHasTraced = sessionStorage.getItem("predict_hasTraced");
+    if (savedHasTraced === "true") {
+      setHasTraced(true);
+    }
+
+    const savedPhase = sessionStorage.getItem("predict_phase");
+    if (savedPhase === "PHASE_1" || savedPhase === "PHASE_2") {
+      setPredictionPhase(savedPhase);
+    }
+
+    setIsInitialized(true);
+  }, []);
+
+  // Save to session storage when things change, BUT ONLY after initial load
+  useEffect(() => {
+    if (!isInitialized) return;
+    sessionStorage.setItem("predict_form", JSON.stringify(form));
+    sessionStorage.setItem("predict_phase", predictionPhase);
+  }, [form, predictionPhase, isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (result) {
+      sessionStorage.setItem("predict_result", JSON.stringify(result));
+    } else {
+      sessionStorage.removeItem("predict_result");
+    }
+  }, [result, isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    sessionStorage.setItem("predict_hasTraced", hasTraced.toString());
+  }, [hasTraced, isInitialized]);
+
+  if (!isInitialized) {
+    return null;
+  }
 
   const handleTrace = () => {
     setIsTracing(true);
@@ -135,7 +197,7 @@ export default function PredictPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hasTraced || !form.last_mule_city) {
+    if (predictionPhase === "PHASE_2" && (!hasTraced || !form.last_mule_city)) {
       handleTrace();
       return;
     }
@@ -143,9 +205,17 @@ export default function PredictPage() {
     setLoading(true);
     setShowResult(false);
     setError(false);
+    setActionStatus(null);
     try {
       const cityData = CITIES.find((c) => c.city === form.victim_city);
-      const res = await predict({ ...form, victim_state: cityData?.state || "Delhi" });
+      let res;
+      if (predictionPhase === "PHASE_1") {
+        const { predictPhase1 } = await import("@/lib/api");
+        res = await predictPhase1({ ...form, victim_state: cityData?.state || "Delhi" });
+      } else {
+        const { predict } = await import("@/lib/api");
+        res = await predict({ ...form, victim_state: cityData?.state || "Delhi" });
+      }
       if (res.error) {
         throw new Error(res.error);
       }
@@ -156,6 +226,39 @@ export default function PredictPage() {
       setError(err?.message || "CONNECTION FAILED");
     }
     setLoading(false);
+  };
+
+  const handleAction = async (type: "dispatch" | "cms" | "freeze") => {
+    if (!result) return;
+    const { triggerDispatch, triggerCMS, triggerFreeze } = await import("@/lib/api");
+    const payload = {
+        city: result.prediction.zones[0]?.city || form.victim_city,
+        atm_ids: result.prediction.zones[0]?.top_atms?.map((a: any) => a.atm_id) || ["ATM-001"],
+        risk_level: result.prediction.risk_level,
+        complaint_id: `CMP-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
+        amount_at_risk: form.amount,
+        fraud_type: form.fraud_type,
+        withdrawal_window: result.prediction.estimated_withdrawal_window,
+        officer_id: "INSP-CYBER-042",
+        prediction_phase: result.prediction.phase,
+        confidence: result.prediction.overall_confidence,
+        estimated_window_minutes: 120,
+        mule_city: form.last_mule_city || "Unknown",
+        predicted_withdrawal_city: result.prediction.zones[0]?.city,
+        bank_name: result.prediction.zones[0]?.top_atms?.[0]?.bank || "SBI",
+        reason: "Operational fallback"
+    };
+
+    try {
+        let res;
+        if (type === "dispatch") res = await triggerDispatch(payload);
+        else if (type === "cms") res = await triggerCMS(payload);
+        else if (type === "freeze") res = await triggerFreeze(payload);
+        setActionStatus(res);
+    } catch (err) {
+        console.error(err);
+        alert("Action failed to trigger.");
+    }
   };
 
   const riskColors: Record<string, string> = {
@@ -180,6 +283,13 @@ export default function PredictPage() {
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <FieldLabel>Prediction Phase</FieldLabel>
+              <select value={predictionPhase} onChange={(e) => setPredictionPhase(e.target.value as any)} className="input-field" style={{ background: "rgba(56, 189, 248, 0.05)", border: "1px solid rgba(56, 189, 248, 0.2)", color: "var(--cyan)" }}>
+                <option value="PHASE_1">Phase 1: Zero-Hour (T+0 min) - No NPCI Data</option>
+                <option value="PHASE_2">Phase 2: Enriched (T+2 sec) - NPCI Webhook</option>
+              </select>
+            </div>
             <div>
               <FieldLabel>Fraud Type</FieldLabel>
               <select value={form.fraud_type} onChange={(e) => setForm({ ...form, fraud_type: e.target.value })} className="input-field">
@@ -278,8 +388,8 @@ export default function PredictPage() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading || (!hasTraced && !isTracing)} className="btn-primary" style={{ marginTop: 4, width: "100%", opacity: (!hasTraced && !isTracing) ? 0.5 : 1 }}>
-              {loading ? "ANALYZING..." : (!hasTraced && !isTracing) ? "TRACE NETWORK FIRST" : "RUN PREDICTION"}
+            <button type="submit" disabled={loading || (predictionPhase === "PHASE_2" && !hasTraced && !isTracing)} className="btn-primary" style={{ marginTop: 4, width: "100%", opacity: (predictionPhase === "PHASE_2" && !hasTraced && !isTracing) ? 0.5 : 1 }}>
+              {loading ? "ANALYZING..." : (predictionPhase === "PHASE_2" && !hasTraced && !isTracing) ? "TRACE NPCI NETWORK FIRST" : "RUN PREDICTION"}
             </button>
           </form>
         </motion.div>
@@ -320,47 +430,82 @@ export default function PredictPage() {
                   );
                 })()}
 
-                {/* Action Bar */}
-                <div className="glass-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>ACTION</p>
-                    <p style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500, marginTop: 2 }}>{result.recommended_action}</p>
+                {/* Action Bar - PRIORITY CASCADE */}
+                <div className="glass-card" style={{ padding: "14px", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                        OPERATIONAL RESPONSE PRIORITY CASCADE
+                      </p>
+                      <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(56,189,248,0.1)", color: "var(--cyan)", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+                        {result.prediction.phase}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 8 }}>
+                      {result.prediction.phase_note || "Data enriched."}
+                    </p>
+                    <p style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500, borderLeft: "2px solid var(--border-color)", paddingLeft: 8 }}>
+                      {result.recommended_action}
+                    </p>
+                  </div>
+                  
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <button type="button" onClick={() => handleAction("dispatch")} style={{ background: "rgba(6,214,160,0.15)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.3)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                      <span style={{ fontSize: 14 }}>🚓</span>
+                      <span>1. DISPATCH POLICE</span>
+                    </button>
+                    <button type="button" onClick={() => handleAction("freeze")} style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px dashed rgba(239,68,68,0.3)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                      <span style={{ fontSize: 14 }}>❄️</span>
+                      <span>2. FREEZE (FALLBACK)</span>
+                    </button>
                   </div>
                   <button type="button"
-                    style={{
-                      background: "var(--red)", color: "white", padding: "8px 14px",
-                      borderRadius: 6, fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer",
-                      whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace",
-                    }}
                     onClick={() => router.push(buildTopTargetsMapHref(result, form.last_mule_city))}
-                  >
-                    VIEW ON MAP
+                    style={{ width: "100%", background: "rgba(56,189,248,0.12)", color: "#38bdf8", border: "1px solid rgba(56,189,248,0.25)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span style={{ fontSize: 14 }}>🗺️</span>
+                    <span>VIEW ON MAP — ACCESS CCTV & GEOFENCE LOCK</span>
                   </button>
+
+                  {actionStatus && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="glass-card" style={{ marginTop: 8, padding: 12, background: "rgba(255,255,255,0.02)", borderLeft: "2px solid #06d6a0" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: "#06d6a0", fontFamily: "'JetBrains Mono', monospace" }}>✅ {actionStatus.action}</p>
+                        <p style={{ fontSize: 9, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>REF: {actionStatus.reference_id}</p>
+                      </div>
+                      <pre style={{ fontSize: 10, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "pre-wrap", margin: 0, background: "rgba(0,0,0,0.2)", padding: 8, borderRadius: 4 }}>
+                        {JSON.stringify(actionStatus.alert || actionStatus.cms_integration || actionStatus.freeze_details, null, 2)}
+                      </pre>
+                      {actionStatus.priority_warning && (
+                        <p style={{ fontSize: 10, color: "#ef4444", marginTop: 8, fontWeight: 600 }}>⚠️ {actionStatus.priority_warning}</p>
+                      )}
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Predicted Top 3 ATMs */}
                 <div className="glass-card" style={{ padding: 14 }}>
                   <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>
-                    TOP 3 HIGH-RISK ATM TARGETS
+                    XGBOOST PREDICTED CITIES & SPATIAL ATM TARGETS
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {result.prediction.zones.slice(0, 3).map((zone, i) => {
                       const barWidth = `${zone.confidence}%`;
                       const zoneColor = zone.risk_level === "CRITICAL" ? "#ef4444" : zone.risk_level === "HIGH" ? "#f59e0b" : "#eab308";
-                      const topAtm = zone.top_atms && zone.top_atms.length > 0 ? zone.top_atms[0] : null;
-                      
-                      const atmId = topAtm ? topAtm.atm_id : ((zone.city.length * 1024) % 9000 + 1000).toString();
-                      const bankName = topAtm ? topAtm.bank : "ATM";
+                      const topAtms = zone.top_atms ? zone.top_atms.slice(0, 3) : [];
                       
                       const mapParams = new URLSearchParams({
                         focusCity: zone.city,
                         mule: form.last_mule_city
                       });
-                      if (topAtm) {
-                        mapParams.set("atmId", topAtm.atm_id);
-                        mapParams.set("lat", String(topAtm.lat));
-                        mapParams.set("lng", String(topAtm.lng));
+                      
+                      for (const atm of topAtms) {
+                        mapParams.append("atmId", atm.atm_id);
+                        mapParams.append("lat", String(atm.lat));
+                        mapParams.append("lng", String(atm.lng));
+                        mapParams.append("atmBank", atm.bank);
+                        mapParams.append("atmCity", zone.city);
                       }
+                      
                       const mapHref = `/map?${mapParams.toString()}`;
 
                       return (
@@ -374,27 +519,34 @@ export default function PredictPage() {
                             width: barWidth, background: i === 0 ? "rgba(239,68,68,0.06)" : "rgba(56,189,248,0.04)",
                             transition: "width 0.8s ease",
                           }} />
-                          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                             <div>
                               <p style={{ fontWeight: 600, fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
-                                <span style={{ color: "var(--text-muted)", marginRight: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>#{i + 1}</span>
-                                {bankName} ATM #{atmId}
+                                <span style={{ color: "var(--text-muted)", marginRight: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>#{i + 1} Predicted City:</span>
+                                {zone.city}, {zone.state}
                               </p>
-                              <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>
-                                Location: {zone.city}, {zone.state} {topAtm ? "" : "(Near Highway)"}
-                              </p>
+                              <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
+                                {topAtms.length > 0 ? topAtms.map((atm, j) => (
+                                  <p key={atm.atm_id} style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span>📍</span> <span>Target {j+1}:</span> <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{atm.bank} #{atm.atm_id}</span>
+                                  </p>
+                                )) : (
+                                  <p style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>📍 No high-risk ATMs found</p>
+                                )}
+                              </div>
                             </div>
-                            <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
-                              <span style={{ fontSize: 16, fontWeight: 800, color: zoneColor, fontFamily: "'JetBrains Mono', monospace" }}>
-                                {zone.confidence}%
-                              </span>
-                              <span className={`badge badge-${zone.risk_level.toLowerCase()}`}>{zone.risk_level}</span>
-                              
+                            <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ fontSize: 16, fontWeight: 800, color: zoneColor, fontFamily: "'JetBrains Mono', monospace" }}>
+                                  {zone.confidence}%
+                                </span>
+                                <span className={`badge badge-${zone.risk_level.toLowerCase()}`}>{zone.risk_level}</span>
+                              </div>
                               <button
                                 type="button"
                                 className="map-action-btn"
                                 onClick={() => router.push(mapHref)}
-                                aria-label={`View ${bankName} ATM ${atmId} in ${zone.city} on map`}
+                                aria-label={`View ATMs in ${zone.city} on map`}
                               >
                                 <span aria-hidden="true">📍</span> View on Map
                               </button>

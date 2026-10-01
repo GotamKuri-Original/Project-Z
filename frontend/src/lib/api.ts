@@ -49,6 +49,34 @@ export async function predict(complaint: {
   return res.data;
 }
 
+export async function predictPhase1(complaint: {
+  fraud_type: string;
+  amount: number;
+  victim_city: string;
+  victim_state: string;
+  hour_of_day: number;
+  day_of_week: number;
+  reporting_delay_mins: number;
+}) {
+  const res = await api.post("/predict/phase1", complaint);
+  return res.data;
+}
+
+export async function triggerDispatch(data: any) {
+  const res = await api.post("/actions/dispatch", data);
+  return res.data;
+}
+
+export async function triggerCMS(data: any) {
+  const res = await api.post("/actions/cms-alert", data);
+  return res.data;
+}
+
+export async function triggerFreeze(data: any) {
+  const res = await api.post("/actions/freeze-account", data);
+  return res.data;
+}
+
 export async function getNetwork(gangId?: string) {
   const res = await api.get("/network", { params: { gang_id: gangId, limit: 150 } });
   return res.data;

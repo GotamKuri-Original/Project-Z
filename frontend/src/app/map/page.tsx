@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import type { DivIcon, LatLngTuple, Marker as LeafletMarker } from "leaflet";
 import { getATMs } from "@/lib/api";
 import { LiveCctvModal } from "@/components/LiveCctvModal";
@@ -203,6 +203,7 @@ export default function MapPage() {
 
 function MapPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Seed state straight from the URL so the first fetch is already city-scoped 
   // (no "" -> focusCity double-load of 5,000 ATMs).
@@ -354,6 +355,13 @@ function MapPageContent() {
     <div className="fade-in">
       <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
+          <button 
+            type="button" 
+            onClick={() => router.back()} 
+            style={{ background: "none", border: "none", color: "var(--blue)", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0, marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}
+          >
+            ← Back
+          </button>
           <h1 style={{ fontSize: 28, fontWeight: 800 }}>ATM Risk Map</h1>
           <p style={{ color: "#475569", marginTop: 4, fontSize: 14 }}>
             Live visualization of {stats.total.toLocaleString()} ATMs across India
