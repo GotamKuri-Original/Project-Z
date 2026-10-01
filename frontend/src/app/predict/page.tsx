@@ -24,6 +24,10 @@ interface PredictionResponse {
         lat: number;
         lng: number;
         confidence: number;
+        atm_risk: number;
+        final_score: number;
+        risk_level: string;
+        reasons: string[];
       }>;
     }>;
   };
@@ -52,6 +56,13 @@ function buildTopTargetsMapHref(result: PredictionResponse, muleCity: string) {
   
   return `/map?${params.toString()}`;
 }
+
+const RISK_FACTORS = [
+  { id: 'highway', label: 'Highway Corridor' },
+  { id: 'border', label: 'State Border' },
+  { id: 'velocity', label: 'Transaction Velocity' },
+  { id: 'cctv_gap', label: 'CCTV Blindspot' }
+];
 
 const FRAUD_TYPES = [
   { value: "UPI_FRAUD", label: "UPI Fraud" },
@@ -525,11 +536,18 @@ export default function PredictPage() {
                                 <span style={{ color: "var(--text-muted)", marginRight: 6, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>#{i + 1} Predicted City:</span>
                                 {zone.city}, {zone.state}
                               </p>
-                              <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
+                              <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
                                 {topAtms.length > 0 ? topAtms.map((atm, j) => (
-                                  <p key={atm.atm_id} style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span>📍</span> <span>Target {j+1}:</span> <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{atm.bank} #{atm.atm_id}</span>
-                                  </p>
+                                  <div key={atm.atm_id} style={{ display: "flex", flexDirection: "column", gap: 2, background: "rgba(255,255,255,0.01)", padding: "4px 8px", borderRadius: 4, borderLeft: `2px solid ${atm.risk_level === 'CRITICAL' ? '#ef4444' : atm.risk_level === 'HIGH' ? '#f59e0b' : '#38bdf8'}` }}>
+                                    <p style={{ fontSize: 11, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span>{j+1}. {atm.bank}</span> 
+                                      <span style={{ color: "var(--text-muted)", fontSize: 9 }}>#{atm.atm_id}</span>
+                                      <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--cyan)" }}>Score: {atm.final_score?.toFixed(3) || "N/A"}</span>
+                                    </p>
+                                    <p style={{ fontSize: 9, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                      {atm.reasons?.join(" • ") || "Elevated static risk"}
+                                    </p>
+                                  </div>
                                 )) : (
                                   <p style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>📍 No high-risk ATMs found</p>
                                 )}

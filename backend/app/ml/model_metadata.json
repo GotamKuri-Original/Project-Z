@@ -1,6 +1,6 @@
 {
-  "accuracy": 0.665,
-  "f1_score": 0.6649,
+  "accuracy": 0.6763,
+  "f1_score": 0.6763,
   "n_features": 12,
   "feature_names": [
     "fraud_type_encoded",
@@ -17,18 +17,18 @@
     "delay_bucket"
   ],
   "feature_importance": {
-    "last_mule_city_encoded": 0.4001,
-    "victim_city_encoded": 0.3357,
-    "amount_log": 0.0304,
-    "reporting_delay_mins": 0.0292,
-    "fraud_type_encoded": 0.0281,
-    "hour_of_day": 0.027,
-    "is_night": 0.0266,
-    "mule_chain_length": 0.0261,
-    "day_of_week": 0.0258,
-    "amount_bucket": 0.0238,
-    "is_weekend": 0.0237,
-    "delay_bucket": 0.0235
+    "last_mule_city_encoded": 0.5246,
+    "victim_city_encoded": 0.4294,
+    "fraud_type_encoded": 0.008,
+    "amount_log": 0.0047,
+    "reporting_delay_mins": 0.0045,
+    "hour_of_day": 0.0043,
+    "day_of_week": 0.0042,
+    "is_night": 0.0042,
+    "mule_chain_length": 0.0041,
+    "is_weekend": 0.0041,
+    "amount_bucket": 0.004,
+    "delay_bucket": 0.0039
   },
   "target_cities": [
     "Ahmedabad",

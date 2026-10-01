@@ -17,6 +17,9 @@ from pydantic import BaseModel
 import os
 import json
 import random
+import hashlib
+from typing import Optional
+from app.services.atm_ranker import ATMRanker, build_ranker
 
 try:
     import pandas as pd
@@ -81,6 +84,7 @@ _model = None
 _encoders = None
 _metadata = None
 _atms_df = None
+_ranker: Optional[ATMRanker] = None
 
 
 def _load_model():
@@ -116,15 +120,15 @@ def _load_model():
 
 
 def _load_atms():
-    """Load ATM data for zone-level results."""
-    global _atms_df
-    if not ML_AVAILABLE:
-        return
+    """Load ATM data and build the Stage-2 ATM ranker."""
+    global _atms_df, _ranker
     try:
         _atms_df = pd.read_csv(os.path.join(DATA_DIR, 'atm_locations.csv'))
         print(f"[ML] ATM data loaded — {len(_atms_df)} ATMs")
     except Exception as e:
         print(f"[WARNING] Could not load ATM data: {e}")
+        return
+    _ranker = build_ranker(_atms_df, DATA_DIR)
 
 
 # Load on import
@@ -281,6 +285,12 @@ def predict_withdrawal_location(complaint: ComplaintInput):
                 "overall_confidence": round(top_confidence, 1),
                 "estimated_withdrawal_window": withdrawal_windows.get(complaint.fraud_type, "2-24 hours"),
                 "zones": zone_predictions,
+                "ranked_atms": [],
+                "ranking": {
+                    "method": "mock",
+                    "weights": {},
+                    "candidates_evaluated": 0,
+                },
                 "model_info": {
                     "algorithm": "XGBoost (Gradient Boosted Trees)",
                     "accuracy": 0.92,
@@ -305,10 +315,16 @@ def predict_withdrawal_location(complaint: ComplaintInput):
     top_cities = target_encoder.inverse_transform(top_indices)
     top_probs = probabilities[top_indices]
 
-    # Step 4: Build zone-level predictions with ATM data
+    # Step 4: Stage 2 — deterministic ATM ranking inside the predicted cities
+    city_probabilities = [(str(city), float(prob)) for city, prob in zip(top_cities, top_probs)]
+    ranking = (
+        _ranker.rank(city_probabilities, fraud_type=complaint.fraud_type, top_n=3, per_city_limit=5)
+        if _ranker is not None else {"ranked_atms": [], "by_city": {}, "candidates_evaluated": 0, "weights": {}}
+    )
+
     zone_predictions = []
-    for city, prob in zip(top_cities, top_probs):
-        confidence = round(float(prob * 100), 1)
+    for city, prob in city_probabilities:
+        confidence = round(prob * 100, 1)
 
         # Find ATMs in this city
         city_atms = _atms_df[_atms_df["city"] == city] if _atms_df is not None else pd.DataFrame()
@@ -325,12 +341,7 @@ def predict_withdrawal_location(complaint: ComplaintInput):
             "confidence": confidence,
             "num_high_risk_atms": len(high_risk_atms),
             "risk_level": "CRITICAL" if confidence > 30 else "HIGH" if confidence > 15 else "MEDIUM",
-            "top_atms": (
-                city_atms.nlargest(5, "near_highway")[["atm_id", "bank", "lat", "lng"]]
-                .assign(confidence=confidence)
-                .to_dict(orient="records")
-                if len(city_atms) > 0 else []
-            ),
+            "top_atms": ranking["by_city"].get(city, []),
         })
     # Overall risk assessment
     top_confidence = zone_predictions[0]["confidence"] if zone_predictions else 0
@@ -375,7 +386,8 @@ def predict_withdrawal_location(complaint: ComplaintInput):
             })
 
     # ── Money Flow: Mule Chain Visualization ──
-    random.seed(hash(complaint.victim_city + complaint.last_mule_city + str(complaint.amount)))
+    flow_seed_key = f"{complaint.victim_city}|{complaint.last_mule_city}|{complaint.amount}"
+    random.seed(int(hashlib.sha256(flow_seed_key.encode("utf-8")).hexdigest()[:16], 16))
 
     # Build the mule chain: Victim → Mule1 → Mule2 → ... → ATM Withdrawal
     mule_cities_pool = ["Mathura", "Bharatpur", "Nuh", "Jamtara", "Deoghar", "Ranchi", 
@@ -431,6 +443,12 @@ def predict_withdrawal_location(complaint: ComplaintInput):
             "overall_confidence": round(top_confidence, 1),
             "estimated_withdrawal_window": withdrawal_windows.get(complaint.fraud_type, "2-24 hours"),
             "zones": zone_predictions,
+            "ranked_atms": ranking["ranked_atms"],
+            "ranking": {
+                "method": "final_score = city_probability × atm_risk",
+                "weights": ranking["weights"],
+                "candidates_evaluated": ranking["candidates_evaluated"],
+            },
             "model_info": {
                 "algorithm": "XGBoost (Gradient Boosted Trees)",
                 "accuracy": _metadata["accuracy"],
