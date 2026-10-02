@@ -461,19 +461,16 @@ export default function PredictPage() {
                   </div>
                   
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button type="button" onClick={() => handleAction("dispatch")} style={{ background: "rgba(6,214,160,0.15)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.3)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace" }}>
-                      <span style={{ fontSize: 14 }}>🚓</span>
+                    <button type="button" onClick={() => handleAction("dispatch")} style={{ background: "rgba(6,214,160,0.15)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.3)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'JetBrains Mono', monospace" }}>
                       <span>1. DISPATCH POLICE</span>
                     </button>
-                    <button type="button" onClick={() => handleAction("freeze")} style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px dashed rgba(239,68,68,0.3)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace" }}>
-                      <span style={{ fontSize: 14 }}>❄️</span>
+                    <button type="button" onClick={() => handleAction("freeze")} style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px dashed rgba(239,68,68,0.3)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'JetBrains Mono', monospace" }}>
                       <span>2. FREEZE (FALLBACK)</span>
                     </button>
                   </div>
                   <button type="button"
                     onClick={() => router.push(buildTopTargetsMapHref(result, form.last_mule_city))}
                     style={{ width: "100%", background: "rgba(56,189,248,0.12)", color: "#38bdf8", border: "1px solid rgba(56,189,248,0.25)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace" }}>
-                    <span style={{ fontSize: 14 }}>🗺️</span>
                     <span>VIEW ON MAP — ACCESS CCTV & GEOFENCE LOCK</span>
                   </button>
 
@@ -549,7 +546,7 @@ export default function PredictPage() {
                                     </p>
                                   </div>
                                 )) : (
-                                  <p style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>📍 No high-risk ATMs found</p>
+                                  <p style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>No high-risk ATMs found</p>
                                 )}
                               </div>
                             </div>
@@ -566,7 +563,7 @@ export default function PredictPage() {
                                 onClick={() => router.push(mapHref)}
                                 aria-label={`View ATMs in ${zone.city} on map`}
                               >
-                                <span aria-hidden="true">📍</span> View on Map
+                                View on Map
                               </button>
                             </div>
                           </div>

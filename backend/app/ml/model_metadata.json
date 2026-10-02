@@ -17,18 +17,18 @@
     "delay_bucket"
   ],
   "feature_importance": {
-    "last_mule_city_encoded": 0.5246,
-    "victim_city_encoded": 0.4294,
-    "fraud_type_encoded": 0.008,
-    "amount_log": 0.0047,
+    "last_mule_city_encoded": 0.5082,
+    "victim_city_encoded": 0.4476,
+    "fraud_type_encoded": 0.0072,
+    "amount_log": 0.0046,
     "reporting_delay_mins": 0.0045,
-    "hour_of_day": 0.0043,
-    "day_of_week": 0.0042,
-    "is_night": 0.0042,
+    "hour_of_day": 0.0042,
+    "day_of_week": 0.0041,
+    "is_night": 0.0041,
     "mule_chain_length": 0.0041,
-    "is_weekend": 0.0041,
-    "amount_bucket": 0.004,
-    "delay_bucket": 0.0039
+    "is_weekend": 0.004,
+    "amount_bucket": 0.0038,
+    "delay_bucket": 0.0036
   },
   "target_cities": [
     "Ahmedabad",
