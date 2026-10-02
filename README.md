@@ -4,11 +4,18 @@
 *Engineered for the Ministry of Home Affairs (MHA), I4C, and State Cyber Cells*  
 *Developed for Problem Statement SIH26184 | Smart India Hackathon (SIH) 2026*
 
-![Platform](https://img.shields.io/badge/Platform-Next.js%20(App%20Router)-000000?logo=next.js)
-![Backend](https://img.shields.io/badge/Backend-FastAPI%20(Python)-009688?logo=fastapi&logoColor=white)
-![Machine Learning](https://img.shields.io/badge/ML-XGBoost%20%7C%20TreeSHAP-4B8BBE?logo=python&logoColor=white)
-![Spatial DB](https://img.shields.io/badge/Database-PostGIS%20%2B%20GiST-336791?logo=postgresql&logoColor=white)
-![Alerts](https://img.shields.io/badge/Dispatch-Webhook%20%7C%20ntfy.sh-FF5722)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white)
+<br>
+![XGBoost](https://img.shields.io/badge/XGBoost-199900?style=flat-square)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat-square&logo=pandas&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?style=flat-square&logo=numpy&logoColor=white)
+![Leaflet](https://img.shields.io/badge/Leaflet-199900?style=flat-square&logo=leaflet&logoColor=white)
 
 ---
 
