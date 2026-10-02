@@ -548,7 +548,7 @@ export default function PredictPage() {
                       return (
                         <li key={node.id} style={{
                           display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 4,
-                          background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-color)",
+                          background: "#f8fafc", border: "1px solid var(--border-color)",
                           fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
                         }}>
                           <span style={{ color: accent, fontWeight: 700, whiteSpace: "nowrap" }}>
@@ -609,7 +609,7 @@ export default function PredictPage() {
                 {/* Reset Button */}
                 <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -4 }}>
                   <button onClick={() => { setResult(null); setShowResult(false); resetTrace(); setComplaintId(""); setForm({ fraud_type: "UPI_FRAUD", amount: 20000, victim_city: "Delhi", last_mule_city: "", mule_chain_length: 0, hour_of_day: 20, day_of_week: 3, reporting_delay_mins: 10 }); }} style={{
-                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                    background: "#f1f5f9", border: "1px solid var(--border-color)",
                     color: "var(--text-secondary)", padding: "4px 12px", borderRadius: 4,
                     fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace",
                     cursor: "pointer", transition: "all 0.2s"
@@ -641,7 +641,7 @@ export default function PredictPage() {
                           </p>
                         </div>
                       </div>
-                      <div style={{ marginTop: 10, padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 6, fontSize: 11, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace" }}>
+                      <div style={{ marginTop: 10, padding: "8px 10px", background: "#f1f5f9", borderRadius: 6, fontSize: 11, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace" }}>
                         ETA: <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{result.prediction.estimated_withdrawal_window}</span>
                       </div>
                     </div>
@@ -668,11 +668,11 @@ export default function PredictPage() {
                   </div>
                   
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("dispatch")} style={{ background: result.action_allowed ? "rgba(6,214,160,0.15)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#06d6a0" : "var(--text-muted)", border: result.action_allowed ? "1px solid rgba(6,214,160,0.3)" : "1px solid rgba(255,255,255,0.1)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("dispatch")} style={{ background: result.action_allowed ? "rgba(6,214,160,0.15)" : "#f1f5f9", color: result.action_allowed ? "#06d6a0" : "var(--text-muted)", border: result.action_allowed ? "1px solid rgba(6,214,160,0.3)" : "1px solid var(--border-color)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
                       <span style={{ fontSize: 14 }}>🚓</span>
                       <span>1. DISPATCH POLICE</span>
                     </button>
-                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("freeze")} style={{ background: result.action_allowed ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#ef4444" : "var(--text-muted)", border: result.action_allowed ? "1px dashed rgba(239,68,68,0.3)" : "1px dashed rgba(255,255,255,0.1)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("freeze")} style={{ background: result.action_allowed ? "rgba(239,68,68,0.1)" : "#f1f5f9", color: result.action_allowed ? "#ef4444" : "var(--text-muted)", border: result.action_allowed ? "1px dashed rgba(239,68,68,0.3)" : "1px dashed var(--border-color)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
                       <span>2. FREEZE (FALLBACK)</span>
                     </button>
                   </div>
@@ -684,20 +684,20 @@ export default function PredictPage() {
 
                   <button type="button"
                     onClick={() => setShowBrief(!showBrief)}
-                    style={{ width: "100%", background: "rgba(255, 255, 255, 0.05)", color: "var(--text-secondary)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", marginTop: "-4px" }}>
+                    style={{ width: "100%", background: "#f1f5f9", color: "var(--text-secondary)", border: "1px solid var(--border-color)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", marginTop: "-4px" }}>
                     <span style={{ fontSize: 14 }}>📄</span>
                     <span>{showBrief ? "HIDE INVESTIGATION BRIEF" : "3. GENERATE INVESTIGATION BRIEF"}</span>
                   </button>
 
                   <AnimatePresence>
                     {showBrief && (
-                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="glass-card" style={{ marginTop: 4, padding: 16, background: "rgba(0,0,0,0.3)", borderLeft: "2px solid var(--text-muted)", overflow: "hidden" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: 8 }}>
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="glass-card" style={{ marginTop: 4, padding: 16, background: "#f8fafc", borderLeft: "2px solid var(--text-muted)", overflow: "hidden" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, borderBottom: "1px solid var(--border-color)", paddingBottom: 8 }}>
                           <div>
                             <p style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace" }}>📄 OFFICIAL INVESTIGATION BRIEF</p>
                             <p style={{ fontSize: 9, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>CONFIDENTIAL - FOR AUTHORIZED CYBER CELL PERSONNEL ONLY</p>
                           </div>
-                          <button onClick={() => { navigator.clipboard.writeText(`INVESTIGATION BRIEF [${result.complaint.complaint_id}]\n...\n`); alert("Copied to clipboard!"); }} style={{ fontSize: 10, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "var(--text-secondary)", padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>📋 COPY</button>
+                          <button onClick={() => { navigator.clipboard.writeText(`INVESTIGATION BRIEF [${result.complaint.complaint_id}]\n...\n`); alert("Copied to clipboard!"); }} style={{ fontSize: 10, background: "transparent", border: "1px solid var(--border-color)", color: "var(--text-secondary)", padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>📋 COPY</button>
                         </div>
                         
                         <div style={{ fontSize: 11, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.6 }}>
@@ -744,7 +744,7 @@ export default function PredictPage() {
                   </AnimatePresence>
 
                   {actionStatus && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="glass-card" style={{ marginTop: 8, padding: 12, background: "rgba(255,255,255,0.02)", borderLeft: "2px solid #06d6a0" }}>
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="glass-card" style={{ marginTop: 8, padding: 12, background: "#f8fafc", borderLeft: "2px solid #06d6a0" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                         <p style={{ fontSize: 11, fontWeight: 700, color: "#06d6a0", fontFamily: "'JetBrains Mono', monospace" }}>✅ {actionStatus.action}</p>
                         <p style={{ fontSize: 9, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>REF: {actionStatus.reference_id}</p>
@@ -839,7 +839,7 @@ export default function PredictPage() {
                       </div>
 
                       {/* ── ACKNOWLEDGEMENT TRACKING PIPELINE ── */}
-                      <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                      <div style={{ background: "#f8fafc", border: "1px solid var(--border-color)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
                         <p style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>NOTIFICATION DELIVERY STATUS</p>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 4 }}>
                           {[
@@ -855,12 +855,12 @@ export default function PredictPage() {
                             </div>
                           ))}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, padding: "6px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, padding: "6px 0", borderTop: "1px solid var(--border-color)" }}>
                           {["Generated", "Dispatched", "Delivered", "Acknowledged"].map((step, i) => (
                             <div key={step} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <div style={{
                                 width: 8, height: 8, borderRadius: "50%",
-                                background: i < 3 || (i === 3 && isAcknowledged) ? "#06d6a0" : "rgba(255,255,255,0.2)",
+                                background: i < 3 || (i === 3 && isAcknowledged) ? "#06d6a0" : "#cbd5e1",
                               }} />
                               {i === 3 && !isAcknowledged ? (
                                 <button type="button" onClick={() => setIsAcknowledged(true)} style={{ 
@@ -879,7 +879,7 @@ export default function PredictPage() {
                         </div>
                       </div>
 
-                      <pre style={{ fontSize: 10, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "pre-wrap", margin: 0, background: "rgba(0,0,0,0.2)", padding: 8, borderRadius: 4 }}>
+                      <pre style={{ fontSize: 10, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "pre-wrap", margin: 0, background: "#f1f5f9", border: "1px solid var(--border-color)", padding: 8, borderRadius: 4 }}>
                         {JSON.stringify(actionStatus.alert || actionStatus.cms_integration || actionStatus.freeze_details, null, 2)}
                       </pre>
                       {actionStatus.priority_warning && (
@@ -993,7 +993,7 @@ export default function PredictPage() {
                           <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 300, overflowY: "auto" }}>
                             {auditTrail.map((rec, i) => (
                               <div key={i} style={{
-                                padding: "8px 10px", borderRadius: 6, background: "rgba(0,0,0,0.2)",
+                                padding: "8px 10px", borderRadius: 6, background: "#f8fafc", border: "1px solid var(--border-color)",
                                 borderLeft: `3px solid ${rec.status === "APPROVED" ? "#06d6a0" : rec.status === "REJECTED" ? "#ef4444" : rec.status === "ESCALATED" ? "#f59e0b" : "var(--text-muted)"}`,
                                 fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
                               }}>
@@ -1001,7 +1001,7 @@ export default function PredictPage() {
                                   <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>{rec.case_id}</span>
                                   <span style={{
                                     padding: "1px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700,
-                                    background: rec.status === "APPROVED" ? "rgba(6,214,160,0.2)" : rec.status === "REJECTED" ? "rgba(239,68,68,0.2)" : rec.status === "ESCALATED" ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.1)",
+                                    background: rec.status === "APPROVED" ? "rgba(6,214,160,0.1)" : rec.status === "REJECTED" ? "rgba(239,68,68,0.1)" : rec.status === "ESCALATED" ? "rgba(245,158,11,0.1)" : "#f1f5f9",
                                     color: rec.status === "APPROVED" ? "#06d6a0" : rec.status === "REJECTED" ? "#ef4444" : rec.status === "ESCALATED" ? "#f59e0b" : "var(--text-muted)",
                                   }}>
                                     {rec.status}
@@ -1053,7 +1053,7 @@ export default function PredictPage() {
 
                       return (
                         <div key={i} style={{
-                          background: "rgba(255,255,255,0.02)", borderRadius: 6, padding: "10px 12px",
+                          background: "#f8fafc", borderRadius: 6, padding: "10px 12px",
                           border: i === 0 ? `1px solid rgba(239,68,68,0.15)` : "1px solid var(--border-color)",
                           position: "relative", overflow: "hidden",
                         }}>
@@ -1070,7 +1070,7 @@ export default function PredictPage() {
                               </p>
                               <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
                                 {topAtms.length > 0 ? topAtms.map((atm, j) => (
-                                  <div key={atm.atm_id} style={{ display: "flex", flexDirection: "column", gap: 2, background: "rgba(255,255,255,0.01)", padding: "4px 8px", borderRadius: 4, borderLeft: `2px solid ${atm.risk_level === 'CRITICAL' ? '#ef4444' : atm.risk_level === 'HIGH' ? '#f59e0b' : '#38bdf8'}` }}>
+                                  <div key={atm.atm_id} style={{ display: "flex", flexDirection: "column", gap: 2, background: "#f8fafc", padding: "4px 8px", borderRadius: 4, borderLeft: `2px solid ${atm.risk_level === 'CRITICAL' ? '#ef4444' : atm.risk_level === 'HIGH' ? '#f59e0b' : '#38bdf8'}` }}>
                                     <p style={{ fontSize: 11, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 6 }}>
                                       <span>{j+1}. {atm.bank}</span> 
                                       <span style={{ color: "var(--text-muted)", fontSize: 9 }}>#{atm.atm_id}</span>
@@ -1123,7 +1123,7 @@ export default function PredictPage() {
                           <span style={{ fontSize: 11, color: "var(--text-secondary)", minWidth: 160, fontFamily: "'JetBrains Mono', monospace" }}>
                             {feat.label}
                           </span>
-                          <div style={{ flex: 1, height: 14, background: "rgba(255,255,255,0.03)", borderRadius: 3, overflow: "hidden", position: "relative" }}>
+                          <div style={{ flex: 1, height: 14, background: "#f1f5f9", borderRadius: 3, overflow: "hidden", position: "relative" }}>
                             <div style={{
                               height: "100%", borderRadius: 3,
                               width: `${Math.min(feat.importance * 3, 100)}%`,
@@ -1164,7 +1164,7 @@ export default function PredictPage() {
                                 background: nodeColor, flexShrink: 0,
                                 boxShadow: `0 0 6px ${nodeColor}50`,
                               }} />
-                              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: isLast ? "rgba(239,68,68,0.05)" : "rgba(255,255,255,0.02)", borderRadius: 6, border: isLast ? `1px dashed ${nodeColor}60` : `1px solid ${nodeColor}20` }}>
+                              <div style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: isLast ? "rgba(239,68,68,0.05)" : "#f8fafc", borderRadius: 6, border: isLast ? `1px dashed ${nodeColor}60` : `1px solid ${nodeColor}20` }}>
                                 <div>
                                   <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{step.from}</span>
                                   <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 8 }}>→ {isLast ? "[PENDING CASH-OUT AT ATM]" : step.to}</span>
@@ -1181,7 +1181,7 @@ export default function PredictPage() {
                             </div>
                             {/* Connector line */}
                             {!isLast && (
-                              <div style={{ width: 2, height: 16, background: "rgba(255,255,255,0.08)", marginLeft: 4, borderRadius: 1 }} />
+                              <div style={{ width: 2, height: 16, background: "#cbd5e1", marginLeft: 4, borderRadius: 1 }} />
                             )}
                           </div>
                         );
