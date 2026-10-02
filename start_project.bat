@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 echo ========================================================
-echo   Starting CrimeShield AI (Team CTRL Z)
+echo   Starting CrimeShield AI (Team Byte Slayers)
 echo ========================================================
 echo.
 

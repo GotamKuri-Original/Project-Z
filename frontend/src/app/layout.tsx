@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-scroll-behavior="smooth">
       <head>
         <title>CrimeShield AI — National Cybercrime Prediction Portal</title>
-        <meta name="description" content="Predictive Analytics to Forecast Cybercrime Cash Withdrawal Locations — Ministry of Home Affairs — Team CTRL Z" />
+        <meta name="description" content="Predictive Analytics to Forecast Cybercrime Cash Withdrawal Locations — Ministry of Home Affairs — Team Byte Slayers" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
@@ -138,7 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     Cyber Coordination Centre
                   </span>
                   <span style={{ fontSize: "8.5px", color: "#64748b", fontStyle: "italic", marginTop: 2 }}>
-                    सहवीर्यं करवावहै • Team CTRL Z
+                    सहवीर्यं करवावहै • Team Byte Slayers
                   </span>
                 </div>
               </div>
@@ -341,19 +341,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* 5. OFFICIAL GOVERNMENT FOOTER                                 */}
           {/* ═════════════════════════════════════════════════════════════ */}
           <footer style={{
-            background: "#080c14",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
+            background: "#f1f5f9",
+            borderTop: "1px solid #e2e8f0",
             padding: "16px 28px",
             marginTop: "auto",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             fontSize: "11px",
-            color: "var(--text-muted)",
+            color: "#475569",
             fontFamily: "'JetBrains Mono', monospace",
           }}>
             <div>
-              <span>CrimeShield AI © 2026 • Ministry of Home Affairs • Smart India Hackathon (Team CTRL Z)</span>
+              <span>CrimeShield AI © 2026 • Ministry of Home Affairs • Smart India Hackathon (Team Byte Slayers)</span>
             </div>
             <div style={{ display: "flex", gap: 16 }}>
               <span>CFCFRMS / NPCI Integrated</span>

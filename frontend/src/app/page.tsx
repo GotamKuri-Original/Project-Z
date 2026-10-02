@@ -76,11 +76,12 @@ const ChartTooltip = ({ active, payload, label }: { active?: boolean; payload?: 
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: "#131320", border: "1px solid rgba(255,255,255,0.08)",
+      background: "#ffffff", border: "1px solid #e2e8f0",
       borderRadius: 6, padding: "8px 12px", fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     }}>
-      <p style={{ color: "var(--text-muted)" }}>{label}</p>
-      <p style={{ color: "#06d6a0", fontWeight: 700, fontSize: 13 }}>{payload[0].value?.toLocaleString("en-IN")}</p>
+      <p style={{ color: "#64748b" }}>{label}</p>
+      <p style={{ color: "#0284c7", fontWeight: 700, fontSize: 13 }}>{payload[0].value?.toLocaleString("en-IN")}</p>
     </div>
   );
 };

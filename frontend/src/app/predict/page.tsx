@@ -479,18 +479,20 @@ export default function PredictPage() {
                     style={{ flex: 1, fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase" }}
                   />
                   <button type="button" onClick={() => void handleTrace()} disabled={isTracing} style={{
-                    background: "rgba(6,214,160,0.1)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.2)",
-                    padding: "4px 10px", borderRadius: 4, fontSize: 9, fontWeight: 700, cursor: isTracing ? "wait" : "pointer",
+                    background: "#059669", color: "#ffffff", border: "none",
+                    padding: "6px 12px", borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: isTracing ? "wait" : "pointer",
                     fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap",
+                    boxShadow: "0 1px 4px rgba(5,150,105,0.25)"
                   }}>
                     {isTracing ? "QUERYING NPCI..." : hasTraced ? "RE-TRACE" : "AUTO-TRACE"}
                   </button>
                   <button type="button" onClick={loadDemoCase} disabled={isTracing} title="Load a random working Phase 2 case" style={{
-                    background: "rgba(168, 85, 247, 0.15)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.3)",
-                    padding: "4px 8px", borderRadius: 4, fontSize: 9, fontWeight: 800, cursor: isTracing ? "wait" : "pointer",
+                    background: "#7c3aed", color: "#ffffff", border: "none",
+                    padding: "6px 12px", borderRadius: 4, fontSize: 10, fontWeight: 800, cursor: isTracing ? "wait" : "pointer",
                     fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap",
+                    boxShadow: "0 1px 4px rgba(124,58,237,0.25)"
                   }}>
-                    ✨ DEMO
+                    DEMO
                   </button>
                 </div>
                 {traceError && (
@@ -668,24 +670,22 @@ export default function PredictPage() {
                   </div>
                   
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("dispatch")} style={{ background: result.action_allowed ? "rgba(6,214,160,0.15)" : "#f1f5f9", color: result.action_allowed ? "#06d6a0" : "var(--text-muted)", border: result.action_allowed ? "1px solid rgba(6,214,160,0.3)" : "1px solid var(--border-color)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
-                      <span style={{ fontSize: 14 }}>🚓</span>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("dispatch")} style={{ background: result.action_allowed ? "#059669" : "#f1f5f9", color: result.action_allowed ? "#ffffff" : "var(--text-muted)", border: result.action_allowed ? "1px solid #047857" : "1px solid var(--border-color)", padding: "12px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", boxShadow: result.action_allowed ? "0 2px 8px rgba(5,150,105,0.25)" : "none", transition: "all 0.2s" }}>
                       <span>1. DISPATCH POLICE</span>
                     </button>
-                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("freeze")} style={{ background: result.action_allowed ? "rgba(239,68,68,0.1)" : "#f1f5f9", color: result.action_allowed ? "#ef4444" : "var(--text-muted)", border: result.action_allowed ? "1px dashed rgba(239,68,68,0.3)" : "1px dashed var(--border-color)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("freeze")} style={{ background: result.action_allowed ? "#dc2626" : "#f1f5f9", color: result.action_allowed ? "#ffffff" : "var(--text-muted)", border: result.action_allowed ? "1px solid #b91c1c" : "1px solid var(--border-color)", padding: "12px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.6, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", boxShadow: result.action_allowed ? "0 2px 8px rgba(220,38,38,0.25)" : "none", transition: "all 0.2s" }}>
                       <span>2. FREEZE (FALLBACK)</span>
                     </button>
                   </div>
                   <button type="button"
                     onClick={() => router.push(buildTopTargetsMapHref(result, form.last_mule_city))}
-                    style={{ width: "100%", background: "rgba(56,189,248,0.12)", color: "#38bdf8", border: "1px solid rgba(56,189,248,0.25)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace" }}>
+                    style={{ width: "100%", background: "#0284c7", color: "#ffffff", border: "1px solid #0369a1", padding: "12px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 2px 8px rgba(2,132,199,0.25)", transition: "all 0.2s" }}>
                     <span>VIEW ON MAP — ACCESS CCTV & GEOFENCE LOCK</span>
                   </button>
 
                   <button type="button"
                     onClick={() => setShowBrief(!showBrief)}
-                    style={{ width: "100%", background: "#f1f5f9", color: "var(--text-secondary)", border: "1px solid var(--border-color)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", marginTop: "-4px" }}>
-                    <span style={{ fontSize: 14 }}>📄</span>
+                    style={{ width: "100%", background: "#1e293b", color: "#ffffff", border: "1px solid #0f172a", padding: "12px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", marginTop: "-4px", boxShadow: "0 2px 8px rgba(30,41,59,0.25)", transition: "all 0.2s" }}>
                     <span>{showBrief ? "HIDE INVESTIGATION BRIEF" : "3. GENERATE INVESTIGATION BRIEF"}</span>
                   </button>
 
@@ -694,10 +694,10 @@ export default function PredictPage() {
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="glass-card" style={{ marginTop: 4, padding: 16, background: "#f8fafc", borderLeft: "2px solid var(--text-muted)", overflow: "hidden" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, borderBottom: "1px solid var(--border-color)", paddingBottom: 8 }}>
                           <div>
-                            <p style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace" }}>📄 OFFICIAL INVESTIGATION BRIEF</p>
+                            <p style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace" }}>OFFICIAL INVESTIGATION BRIEF</p>
                             <p style={{ fontSize: 9, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>CONFIDENTIAL - FOR AUTHORIZED CYBER CELL PERSONNEL ONLY</p>
                           </div>
-                          <button onClick={() => { navigator.clipboard.writeText(`INVESTIGATION BRIEF [${result.complaint.complaint_id}]\n...\n`); alert("Copied to clipboard!"); }} style={{ fontSize: 10, background: "transparent", border: "1px solid var(--border-color)", color: "var(--text-secondary)", padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>📋 COPY</button>
+                          <button onClick={() => { navigator.clipboard.writeText(`INVESTIGATION BRIEF [${result.complaint.complaint_id}]\n...\n`); alert("Copied to clipboard!"); }} style={{ fontSize: 10, background: "#0f172a", border: "none", color: "#ffffff", padding: "6px 12px", borderRadius: 4, cursor: "pointer", fontWeight: 700 }}>COPY BRIEF</button>
                         </div>
                         
                         <div style={{ fontSize: 11, color: "var(--text-secondary)", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.6 }}>
@@ -892,7 +892,7 @@ export default function PredictPage() {
                 {/* ── STEP 8: OFFICER VERIFICATION ── */}
                 <div className="glass-card" style={{ padding: 14 }}>
                   <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
-                    👮 OFFICER VERIFICATION — HUMAN IN THE LOOP
+                    OFFICER VERIFICATION — HUMAN IN THE LOOP
                   </p>
                   {currentCaseId && (
                     <p style={{ fontSize: 9, color: "var(--text-muted)", marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
@@ -913,11 +913,12 @@ export default function PredictPage() {
                             await submitOfficerDecision({ case_id: currentCaseId || "", decision: "APPROVE", remarks: "Prediction verified. Proceed with dispatch." });
                           } catch(_) {}
                         }} style={{
-                          background: "rgba(6,214,160,0.15)", color: "#06d6a0", border: "1px solid rgba(6,214,160,0.3)",
-                          padding: "10px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer",
-                          fontFamily: "'JetBrains Mono', monospace",
+                          background: "#059669", color: "#ffffff", border: "1px solid #047857",
+                          padding: "12px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                          fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 2px 8px rgba(5,150,105,0.25)",
+                          transition: "all 0.2s"
                         }}>
-                          ✅ APPROVE
+                          APPROVE
                         </button>
                         <button type="button" onClick={async () => {
                           setOfficerDecision("REJECT");
@@ -926,11 +927,12 @@ export default function PredictPage() {
                             await submitOfficerDecision({ case_id: currentCaseId || "", decision: "REJECT", remarks: "Insufficient confidence. Requesting additional data." });
                           } catch(_) {}
                         }} style={{
-                          background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)",
-                          padding: "10px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer",
-                          fontFamily: "'JetBrains Mono', monospace",
+                          background: "#dc2626", color: "#ffffff", border: "1px solid #b91c1c",
+                          padding: "12px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                          fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 2px 8px rgba(220,38,38,0.25)",
+                          transition: "all 0.2s"
                         }}>
-                          ❌ REJECT
+                          REJECT
                         </button>
                         <button type="button" onClick={async () => {
                           setOfficerDecision("ESCALATE");
@@ -939,11 +941,12 @@ export default function PredictPage() {
                             await submitOfficerDecision({ case_id: currentCaseId || "", decision: "ESCALATE", remarks: "Escalated to Senior Superintendent for review." });
                           } catch(_) {}
                         }} style={{
-                          background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)",
-                          padding: "10px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer",
-                          fontFamily: "'JetBrains Mono', monospace",
+                          background: "#d97706", color: "#ffffff", border: "1px solid #b45309",
+                          padding: "12px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                          fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 2px 8px rgba(217,119,6,0.25)",
+                          transition: "all 0.2s"
                         }}>
-                          ⬆️ ESCALATE
+                          ESCALATE
                         </button>
                       </div>
                     </div>
@@ -954,7 +957,7 @@ export default function PredictPage() {
                       borderLeft: `3px solid ${officerDecision === "APPROVE" ? "#06d6a0" : officerDecision === "REJECT" ? "#ef4444" : "#f59e0b"}`,
                     }}>
                       <p style={{ fontSize: 12, fontWeight: 700, color: officerDecision === "APPROVE" ? "#06d6a0" : officerDecision === "REJECT" ? "#ef4444" : "#f59e0b", fontFamily: "'JetBrains Mono', monospace" }}>
-                        {officerDecision === "APPROVE" ? "✅ APPROVED BY OFFICER" : officerDecision === "REJECT" ? "❌ REJECTED BY OFFICER" : "⬆️ ESCALATED TO SENIOR"}
+                        {officerDecision === "APPROVE" ? "APPROVED BY OFFICER" : officerDecision === "REJECT" ? "REJECTED BY OFFICER" : "ESCALATED TO SENIOR"}
                       </p>
                       <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
                         Officer: INSP-CYBER-042 (Inspector Sharma) • {new Date().toLocaleTimeString()}
@@ -979,7 +982,7 @@ export default function PredictPage() {
                     display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0,
                   }}>
                     <p style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>
-                      📋 PREDICTION AUDIT TRAIL ({auditTrail.length} records)
+                      PREDICTION AUDIT TRAIL ({auditTrail.length} records)
                     </p>
                     <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{showAudit ? "▲" : "▼"}</span>
                   </button>

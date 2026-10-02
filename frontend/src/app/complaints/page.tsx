@@ -109,8 +109,8 @@ export default function ComplaintsPage() {
                         borderLeft: isSelected ? "2px solid var(--cyan)" : "2px solid transparent"
                       }}
                     >
-                      <td className="mono" style={{ color: "#64748b" }}>{c.complaint_id}</td>
-                      <td style={{ color: "#94a3b8" }}>{c.timestamp}</td>
+                      <td className="mono" style={{ color: "#0284c7" }}>{c.complaint_id}</td>
+                      <td style={{ color: "#475569" }}>{c.timestamp}</td>
                       <td>
                         <span style={{
                           display: "inline-block", padding: "4px 12px", borderRadius: 20,
@@ -119,11 +119,11 @@ export default function ComplaintsPage() {
                           {c.fraud_type.replace(/_/g, " ")}
                         </span>
                       </td>
-                      <td style={{ textAlign: "right", fontWeight: 700, color: "#e2e8f0" }}>
+                      <td style={{ textAlign: "right", fontWeight: 700, color: "#0f172a" }}>
                         ₹{c.amount.toLocaleString("en-IN")}
                       </td>
-                      <td style={{ color: "#94a3b8" }}>{c.victim_city}</td>
-                      <td style={{ textAlign: "right", color: "#64748b" }}>{c.reporting_delay_mins} min</td>
+                      <td style={{ color: "#334155" }}>{c.victim_city}</td>
+                      <td style={{ textAlign: "right", color: "#475569" }}>{c.reporting_delay_mins} min</td>
                     </tr>
                   );
                 })}

@@ -73,7 +73,7 @@ function toVisNode(n: ApiNode): VisNode {
     },
     shadow: { enabled: true, color, size: 15, x: 0, y: 0 },
     size: n.size,
-    font: { color: "#cbd5e1", size: 10, face: "Inter", strokeWidth: 2, strokeColor: "#0a0a0a" },
+    font: { color: "#334155", size: 10, face: "Inter", strokeWidth: 2, strokeColor: "#ffffff" },
     title: `${String(n.role).toUpperCase()} | ${n.city} | Risk: ${n.risk}`,
   };
 }
@@ -88,7 +88,7 @@ function toVisEdges(edges: ApiEdge[]): VisEdge[] {
       id: n ? `${base}#${n}` : base,
       from: e.from,
       to: e.to,
-      color: { color: "rgba(255,255,255,0.15)", highlight: "#06d6a0", hover: "#fff" },
+      color: { color: "rgba(100,116,139,0.25)", highlight: "#06d6a0", hover: "#334155" },
       width: e.relation === "commands" ? 2.5 : 1,
       dashes: e.relation === "controls",
       smooth: { enabled: true, type: "continuous", roundness: 0.5 },
@@ -195,15 +195,15 @@ export default function NetworkPage() {
         {/* Floating Stats Overlay */}
         {stats && (
           <div style={{ position: "absolute", top: 20, left: 20, zIndex: 5, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div className="glass-card" style={{ padding: "12px 20px", background: "rgba(10,10,15,0.85)", backdropFilter: "blur(12px)", borderLeft: "3px solid #06d6a0" }}>
+            <div className="glass-card" style={{ padding: "12px 20px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", borderLeft: "3px solid #06d6a0" }}>
               <p style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" }}>Nodes</p>
               <p style={{ fontSize: 24, fontWeight: 800, color: "#06d6a0", fontFamily: "'JetBrains Mono', monospace" }}>{stats.total_nodes}</p>
             </div>
-            <div className="glass-card" style={{ padding: "12px 20px", background: "rgba(10,10,15,0.85)", backdropFilter: "blur(12px)", borderLeft: "3px solid #38bdf8" }}>
+            <div className="glass-card" style={{ padding: "12px 20px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", borderLeft: "3px solid #38bdf8" }}>
               <p style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" }}>Connections</p>
               <p style={{ fontSize: 24, fontWeight: 800, color: "#38bdf8", fontFamily: "'JetBrains Mono', monospace" }}>{stats.total_edges}</p>
             </div>
-            <div className="glass-card" style={{ padding: "12px 20px", background: "rgba(10,10,15,0.85)", backdropFilter: "blur(12px)", borderLeft: "3px solid #ff4757" }}>
+            <div className="glass-card" style={{ padding: "12px 20px", background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", borderLeft: "3px solid #ff4757" }}>
               <p style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" }}>Top Kingpin</p>
               <p style={{ fontSize: 16, fontWeight: 800, color: "#ff4757", fontFamily: "'JetBrains Mono', monospace" }}>{stats.top_kingpin || "N/A"}</p>
             </div>
@@ -213,9 +213,9 @@ export default function NetworkPage() {
         {/* Floating Legend Overlay */}
         <div className="glass-card" style={{ 
           position: "absolute", bottom: 20, left: 20, zIndex: 5, 
-          background: "rgba(10,10,15,0.85)", backdropFilter: "blur(12px)", 
+          background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)", 
           padding: "16px 20px", borderRadius: 12, display: "flex", gap: 20, 
-          fontSize: 12, color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace" 
+          fontSize: 12, color: "#475569", fontFamily: "'JetBrains Mono', monospace" 
         }}>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ff4757", boxShadow: "0 0 8px #ff4757" }} /> Mastermind</span>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ff9f43", boxShadow: "0 0 8px #ff9f43" }} /> Caller</span>
@@ -232,7 +232,7 @@ export default function NetworkPage() {
         )}
         
         {/* Vis.js Canvas */}
-        <div ref={containerRef} style={{ height: "100%", width: "100%", background: "radial-gradient(circle at center, rgba(30,41,59,0.4) 0%, rgba(15,23,42,0) 70%)" }} />
+        <div ref={containerRef} style={{ height: "100%", width: "100%", background: "radial-gradient(circle at center, rgba(226,232,240,0.4) 0%, rgba(248,250,252,0) 70%)" }} />
       </div>
     </div>
   );

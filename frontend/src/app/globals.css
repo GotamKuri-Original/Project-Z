@@ -382,3 +382,34 @@ body::before {
     opacity: 0.6;
   }
 }
+
+/* ─── Next.js Dev Indicator Override ─── */
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+nextjs-portal,
+#__next-build-indicator,
+[data-nextjs-dialog] {
+  --nextjs-bg: transparent !important;
+}
+nextjs-portal > div,
+nextjs-portal button,
+nextjs-portal a,
+[data-nextjs-toast],
+#__next-build-indicator,
+[data-nextjs-dialog],
+[data-nextjs-dialog] > div {
+  background: rgba(255, 255, 255, 0.95) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+/* Next.js floating dev button (N icon) */
+body > nextjs-portal,
+body > nextjs-portal > * {
+  --color-background-100: #ffffff !important;
+  --color-background-200: #f8fafc !important;
+  --color-font-100: #0f172a !important;
+  --color-font-200: #334155 !important;
+}
+
