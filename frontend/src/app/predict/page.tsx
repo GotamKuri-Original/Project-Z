@@ -34,6 +34,8 @@ interface PredictionResponse {
   explainability: Array<{ feature: string; label: string; importance: number; }>;
   money_flow: Array<{ from: string; to: string; amount: number; method: string; }>;
   recommended_action: string;
+  action_allowed?: boolean;
+  complaint?: any;
 }
 
 function buildTopTargetsMapHref(result: PredictionResponse, muleCity: string) {
