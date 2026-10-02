@@ -1,8 +1,14 @@
-# 🛡️ CrimeShield AI (National Cyber Crime Prediction Portal)
+# 🛡️ CrimeShield AI: National Cyber Crime Prediction Portal
 
-**Automated Forecasting of Cybercrime Cash Withdrawal Locations & Rapid Interception**  
-Engineered for the **Ministry of Home Affairs (MHA) & I4C**  
-Developed for **Problem Statement SIH26184 | Smart India Hackathon (SIH) 2026**
+*Automated Forecasting of Cybercrime Cash Withdrawal Locations, Deterministic Trace & Rapid ATM Interception*  
+*Engineered for the Ministry of Home Affairs (MHA), I4C, and State Cyber Cells*  
+*Developed for Problem Statement SIH26184 | Smart India Hackathon (SIH) 2026*
+
+![Platform](https://img.shields.io/badge/Platform-Next.js%20(App%20Router)-000000?logo=next.js)
+![Backend](https://img.shields.io/badge/Backend-FastAPI%20(Python)-009688?logo=fastapi&logoColor=white)
+![Machine Learning](https://img.shields.io/badge/ML-XGBoost%20%7C%20TreeSHAP-4B8BBE?logo=python&logoColor=white)
+![Spatial DB](https://img.shields.io/badge/Database-PostGIS%20%2B%20GiST-336791?logo=postgresql&logoColor=white)
+![Alerts](https://img.shields.io/badge/Dispatch-Webhook%20%7C%20ntfy.sh-FF5722)
 
 ---
 
@@ -230,4 +236,4 @@ Scammers trigger dozens of ₹50 micro-transactions across states to confuse man
 - **Data:** Synthetic data generated for demonstration; inspired by official NCRB 2022 statistics.
 
 *Developed with determination for the Ministry of Home Affairs (MHA) | Problem Statement SIH26184*  
-**Engineered by Team CTRL Z.**
+**Engineered by Team byte_slayers.**
