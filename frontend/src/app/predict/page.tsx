@@ -666,19 +666,17 @@ export default function PredictPage() {
                   </div>
                   
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("dispatch")} style={{ background: result.action_allowed ? "rgba(6,214,160,0.15)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#06d6a0" : "var(--text-muted)", border: result.action_allowed ? "1px solid rgba(6,214,160,0.3)" : "1px solid rgba(255,255,255,0.1)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("dispatch")} style={{ background: result.action_allowed ? "rgba(6,214,160,0.15)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#06d6a0" : "var(--text-muted)", border: result.action_allowed ? "1px solid rgba(6,214,160,0.3)" : "1px solid rgba(255,255,255,0.1)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
                       <span style={{ fontSize: 14 }}>🚓</span>
                       <span>1. DISPATCH POLICE</span>
                     </button>
-                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("freeze")} style={{ background: result.action_allowed ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#ef4444" : "var(--text-muted)", border: result.action_allowed ? "1px dashed rgba(239,68,68,0.3)" : "1px dashed rgba(255,255,255,0.1)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
-                      <span style={{ fontSize: 14 }}>❄️</span>
+                    <button type="button" disabled={!result.action_allowed} onClick={() => handleAction("freeze")} style={{ background: result.action_allowed ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.05)", color: result.action_allowed ? "#ef4444" : "var(--text-muted)", border: result.action_allowed ? "1px dashed rgba(239,68,68,0.3)" : "1px dashed rgba(255,255,255,0.1)", padding: "12px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: result.action_allowed ? "pointer" : "not-allowed", opacity: result.action_allowed ? 1 : 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", transition: "all 0.2s" }}>
                       <span>2. FREEZE (FALLBACK)</span>
                     </button>
                   </div>
                   <button type="button"
                     onClick={() => router.push(buildTopTargetsMapHref(result, form.last_mule_city))}
                     style={{ width: "100%", background: "rgba(56,189,248,0.12)", color: "#38bdf8", border: "1px solid rgba(56,189,248,0.25)", padding: "10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace" }}>
-                    <span style={{ fontSize: 14 }}>🗺️</span>
                     <span>VIEW ON MAP — ACCESS CCTV & GEOFENCE LOCK</span>
                   </button>
 
@@ -1081,7 +1079,7 @@ export default function PredictPage() {
                                     </p>
                                   </div>
                                 )) : (
-                                  <p style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>📍 No high-risk ATMs found</p>
+                                  <p style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>No high-risk ATMs found</p>
                                 )}
                               </div>
                             </div>
@@ -1098,7 +1096,7 @@ export default function PredictPage() {
                                 onClick={() => router.push(mapHref)}
                                 aria-label={`View ATMs in ${zone.city} on map`}
                               >
-                                <span aria-hidden="true">📍</span> View on Map
+                                View on Map
                               </button>
                             </div>
                           </div>
