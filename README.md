@@ -4,6 +4,12 @@
 *Engineered for the Ministry of Home Affairs (MHA), I4C, and State Cyber Cells*  
 *Developed for Problem Statement SIH26184 | Smart India Hackathon (SIH) 2026*
 
+<div align="center">
+  <a href="https://youtu.be/gqedXRHqsPg">
+    <img src="https://img.shields.io/badge/YOUTUBE-WATCH_DEMO_VIDEO-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video" />
+  </a>
+</div>
+
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
