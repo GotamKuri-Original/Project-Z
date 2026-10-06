@@ -8,6 +8,10 @@
   <a href="https://youtu.be/gqedXRHqsPg">
     <img src="https://img.shields.io/badge/YOUTUBE-WATCH_DEMO_VIDEO-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video" />
   </a>
+  <br><br>
+  <a href="https://youtu.be/gqedXRHqsPg">
+    <img src="https://img.youtube.com/vi/gqedXRHqsPg/maxresdefault.jpg" alt="Video Thumbnail" width="800">
+  </a>
 </div>
 
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
